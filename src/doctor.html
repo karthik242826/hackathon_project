@@ -5,35 +5,134 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>DOCTOR DASHBOARD</title>
     <link rel="stylesheet" href="./doctor.css">
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      /* Quick custom helper styles for our modal and states */
+      .hidden { display: none !important; }
+      .modal-backdrop-custom {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1050;
+      }
+      .modal-box { background: white; padding: 30px; border-radius: 8px; width: 550px; max-width: 90%; }
+      .status-indicator { width: 10px; height: 10px; background-color: #2ecc71; border-radius: 50%; display: inline-block; margin-right: 8px; }
+      .badge-visit { background-color: #1abc9c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; }
+      code { background: #f8f9fa; padding: 2px 6px; border-radius: 4px; color: #d63031; }
+    </style>
   </head>
   <body>
-     <nav class="navbar container-fluid">
-        <div class="logo"><img src="./hearth-beat-line-icon-health-medical-heartbeat-symbol-isolated-white-background-hospital-logo-vector-illustration-209787695-removebg-preview.png" class = "hospital-logo"></div>
-        <ul class="nav-links">
-            <li><a href="./index.html">Home</a></li>
-            <li><a href="#overview-section">Overview</a></li>
-            <li><a href="#services-section">My-Appointments</a></li>
-            <li><a href="#prescribe-section">Write-prescription</a></li>
-        </ul>
-        <div><button href="#" class="btn btn-primary p-2 m-2">Log-out</button></div>
-    </nav>
-    <div class="container-fluid">
-      <div class="row">
-        <div class="d-flex flex-row justify-content-center">
-        <h1>welcome Dr.XXX</h1>
+    
+    <nav class="navbar container-fluid bg-dark navbar-dark px-4">
+        <div class="logo">
+          <img src="./hearth-beat-line-icon-health-medical-heartbeat-symbol-isolated-white-background-hospital-logo-vector-illustration-209787695-removebg-preview.png" class="hospital-logo" style="height: 40px;">
         </div>
-        <div class="profile d-flex flex-row justify-content-center"><span class="status-indicator online"></span><strong>Active Session</strong></div>
-     </div>
-     <div class="row">
-      <div class="card">
-        <span class="card-label">Total Appointments</span>
-        <h2 class="card-value">12</h2>
+        <ul class="nav d-flex flex-row list-unstyled gap-4 mb-0">
+            <li><a href="./index.html" class="text-white text-decoration-none">Home</a></li>
+            <li><a href="#overview-section" class="text-white text-decoration-none">Overview</a></li>
+            <li><a href="#appointments-section" class="text-white text-decoration-none">My-Appointments</a></li>
+        </ul>
+        <div><a href="./index.html" class="btn btn-danger p-2 m-2">Log-out</a></div>
+    </nav>
+
+    <div class="container my-5">
+      
+      <div class="row text-center mb-4">
+        <div class="col">
+          <h1 class="display-5 fw-bold">Welcome, Dr. <span id="doctor-name">Loading...</span></h1>
+          <p id="current-date" class="text-muted"></p>
+          <div class="profile d-flex flex-row justify-content-center align-items-center">
+            <span class="status-indicator"></span>
+            <strong>Active Session (<span id="doctor-specialization">General</span>)</strong>
+          </div>
+        </div>
       </div>
-     </div>
+      
+      <div class="row g-4 mb-5 justify-content-center">
+        <div class="col-md-4">
+          <div class="card p-4 text-center shadow-sm border-start border-info border-4">
+            <span class="text-uppercase text-muted small fw-bold">Total Appointments</span>
+            <h2 class="display-4 fw-bold m-0" id="count-appointments">0</h2>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card p-4 text-center shadow-sm border-start border-warning border-4">
+            <span class="text-uppercase text-muted small fw-bold">Pending Actions</span>
+            <h2 class="display-4 fw-bold m-0 text-warning" id="count-pending">0</h2>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" id="appointments-section">
+        <div class="col">
+          <div class="card p-4 shadow-sm bg-white">
+            <h3 class="mb-4 text-secondary">Today's Patient Schedule</h3>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Time Slot</th>
+                    <th>Patient Name</th>
+                    <th>Visit Type</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="appointments-tbody">
+                  <tr>
+                    <td colspan="5" class="text-center text-muted">Awaiting connection pipeline transmission...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+    <div id="prescription-modal" class="modal-backdrop-custom hidden">
+        <div class="modal-box shadow">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="m-0 text-primary">Create New Patient Prescription</h4>
+                <button type="button" class="btn-close" onclick="closePrescriptionModal()"></button>
+            </div>
+            
+            <form id="prescription-form">
+                <input type="hidden" id="form-appointment-id">
+                <input type="hidden" id="form-patient-id">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Clinical Diagnosis Summary:</label>
+                    <input type="text" id="form-diagnosis" class="form-control" required placeholder="e.g., Acute Bronchitis">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Observed Symptoms:</label>
+                    <textarea id="form-symptoms" class="form-control" rows="2" required placeholder="e.g., Dry cough, persistent fever"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Medicine Name:</label>
+                    <input type="text" id="form-medicine" class="form-control" required placeholder="e.g., Amoxicillin">
+                </div>
+                
+                <div class="row g-2 mb-4">
+                    <div class="col-4">
+                        <label class="form-label small fw-bold">Dosage:</label>
+                        <input type="text" id="form-dosage" class="form-control" required placeholder="500mg">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label small fw-bold">Frequency:</label>
+                        <input type="text" id="form-frequency" class="form-control" required placeholder="Twice a day">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label small fw-bold">Duration:</label>
+                        <input type="text" id="form-duration" class="form-control" required placeholder="5 Days">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-dark w-100 py-2 fw-bold">Save & Commit Prescription</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./doctor.js"></script>
   </body>
 </html>
