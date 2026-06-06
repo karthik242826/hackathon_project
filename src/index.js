@@ -1,4 +1,4 @@
-// Get the login modal and button
+
 const loginBtn = document.getElementById('loginBtn');
 const loginModal = document.getElementById('loginModal');
 const closeBtn = document.querySelector('.close-btn');
