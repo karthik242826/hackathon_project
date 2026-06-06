@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // 1. READ PIPELINE: Pull data out of hms.db through our server endpoints
 async function loadDoctorDashboardData() {
     try {
-        const response = await fetch(`/api/doctor-dashboard/${LOGGED_IN_DOCTOR_ID}`);
+       const response = await fetch(`/api/doctor-dashboard/${LOGGED_IN_DOCTOR_ID}`);
         if (!response.ok) throw new Error('Network response returned error codes');
         
         const data = await response.json();
