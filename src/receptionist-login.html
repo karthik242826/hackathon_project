@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receptionist Login</title>
+    <link rel="stylesheet" href="./login.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-form-wrapper">
+            <div class="login-header">
+                <img src="./hearth-beat-line-icon-health-medical-heartbeat-symbol-isolated-white-background-hospital-logo-vector-illustration-209787695-removebg-preview.png" alt="Hospital Logo" class="login-logo">
+                <h1>Receptionist Login</h1>
+            </div>
+            <form id="receptionistLoginForm" class="login-form">
+                <div class="form-group">
+                    <label for="receptionist-username">Username</label>
+                    <input type="text" id="receptionist-username" placeholder="Enter your username" required>
+                </div>
+                <div class="form-group">
+                    <label for="receptionist-password">Password</label>
+                    <input type="password" id="receptionist-password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="login-submit-btn">Login</button>
+            </form>
+            <div class="login-footer">
+                <a href="./index.html">Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="error-modal">
+        <div class="error-modal-content">
+            <span class="error-close-btn">&times;</span>
+            <h2>Login Failed</h2>
+            <p id="errorMessage"></p>
+            <button class="error-ok-btn">OK</button>
+        </div>
+    </div>
+
+    <script src="./login.js"></script>
+    <script>
+        // Receptionist credentials
+        const validCredentials = {
+            receptionist: { username: 'receptionist', password: 'receptionist123' }
+        };
+
+        document.getElementById('receptionistLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('receptionist-username').value;
+            const password = document.getElementById('receptionist-password').value;
+            
+            if (username === validCredentials.receptionist.username && password === validCredentials.receptionist.password) {
+                // Redirect to receptionist dashboard
+                window.location.href = './receptionist.html';
+            } else {
+                showErrorModal('Invalid username or password. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>
