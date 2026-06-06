@@ -17,7 +17,11 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 15px 30px;
-    
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
 }
 
 .logo {
@@ -58,9 +62,14 @@ body {
 
 .doctors-section{
     margin: 50px;
-    display: flex;
     align-items: center;
     gap: 50px;
+}
+
+.about-description{
+    display: flex;
+    gap: 50px;
+    margin-bottom: 100px;
 }
 
 .doctors-image{
@@ -74,4 +83,210 @@ body {
     font-size: 30px;
     font-weight: bold;
     margin-bottom: 20px;
+}
+
+
+.container {
+    max-width: 1000px;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 100px;
+}
+
+h1 {
+    color: black;
+    text-align: left;
+    margin-bottom: 30px;
+    font-size: 2rem;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 20px;
+}
+
+.card {
+    background-color: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.icon {
+    width: 40px;
+    height: 40px;
+    background-color: #f0f7ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 1.2rem;
+}
+
+.view-more {
+    margin-top: 40px;
+    color: #0051a8;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.contact-icon-container{
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.contact-icon{
+    font-size: 2rem;
+    color: #333;
+    transition: color 0.3s ease;
+    cursor: pointer;
+}
+
+#contact-section{
+    background-color: lightgray;
+    border-radius: 10px;
+}
+
+/* Login Modal Styles */
+.login-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.login-modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 40px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 900px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: #000;
+}
+
+.login-modal-content h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
+    font-size: 28px;
+}
+
+.login-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+.login-card {
+    background-color: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.login-card:hover {
+    border-color: #0051a8;
+    box-shadow: 0 8px 16px rgba(0, 81, 168, 0.15);
+    transform: translateY(-5px);
+}
+
+.login-icon {
+    font-size: 60px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-card h3 {
+    color: #333;
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+.login-card p {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.login-btn {
+    background-color: #0051a8;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+.login-btn:hover {
+    background-color: #003d7a;
+}
+
+.login-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
