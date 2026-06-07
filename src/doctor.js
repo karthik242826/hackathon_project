@@ -75,12 +75,41 @@ function openPrescriptionModal(appointmentId, patientId) {
 function closePrescriptionModal() {
     document.getElementById('prescription-modal').classList.add('hidden');
     document.getElementById('prescription-form').reset();
+    const container = document.getElementById('medicines-container');
+    if (container) {
+        const rows = container.querySelectorAll('.medicine-row');
+        for (let i = 1; i < rows.length; i++) rows[i].remove();
+    }
 }
+
+window.addMedicineRow = function() {
+    const container = document.getElementById('medicines-container');
+    const firstRow = container.querySelector('.medicine-row');
+    const newRow = firstRow.cloneNode(true);
+    newRow.querySelectorAll('input').forEach(inp => inp.value = '');
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-close position-absolute top-0 end-0 m-2';
+    removeBtn.onclick = function() { newRow.remove(); };
+    newRow.appendChild(removeBtn);
+    container.appendChild(newRow);
+};
 
 // 2. WRITE PIPELINE: Intercept submit actions to pass values down to SQL engine
 function setupFormInterceptor() {
     document.getElementById('prescription-form').addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        const medicineRows = document.querySelectorAll('.medicine-row');
+        const medicines = [];
+        medicineRows.forEach(row => {
+            medicines.push({
+                name: row.querySelector('.med-name').value,
+                dosage: row.querySelector('.med-dosage').value,
+                frequency: row.querySelector('.med-freq').value,
+                duration: row.querySelector('.med-duration').value
+            });
+        });
 
         const payload = {
             appointment_id: parseInt(document.getElementById('form-appointment-id').value),
@@ -88,10 +117,10 @@ function setupFormInterceptor() {
             doctor_id: LOGGED_IN_DOCTOR_ID,
             diagnosis: document.getElementById('form-diagnosis').value,
             symptoms: document.getElementById('form-symptoms').value,
-            medicine_name: document.getElementById('form-medicine').value,
-            dosage: document.getElementById('form-dosage').value,
-            frequency: document.getElementById('form-frequency').value,
-            duration: document.getElementById('form-duration').value
+            medicine_name: JSON.stringify(medicines),
+            dosage: '-',
+            frequency: '-',
+            duration: '-'
         };
 
         try {
@@ -168,6 +197,37 @@ window.viewPatientHistory = async function(patientId) {
             prescContainer.innerHTML = '<p class="text-muted text-center py-3">No prescriptions recorded for this patient.</p>';
         } else {
             data.prescriptions.forEach(p => {
+                let medicinesListHTML = '';
+                try {
+                    const parsedMeds = JSON.parse(p.MEDICINE_NAME);
+                    if (Array.isArray(parsedMeds)) {
+                        parsedMeds.forEach(m => {
+                            medicinesListHTML += `
+                                <div class="mb-2 pb-2 border-bottom">
+                                    <strong class="text-primary" style="color: #4f46e5 !important;">${m.name}</strong>
+                                    <div class="row text-center small mt-1 text-dark">
+                                        <div class="col-4 border-end">Dosage: <b>${m.dosage}</b></div>
+                                        <div class="col-4 border-end">Frequency: <b>${m.frequency}</b></div>
+                                        <div class="col-4">Duration: <b>${m.duration}</b></div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else throw new Error();
+                } catch(e) {
+                    // Fallback for legacy
+                    medicinesListHTML = `
+                        <div class="mb-2 pb-2 border-bottom">
+                            <strong class="text-primary" style="color: #4f46e5 !important;">${p.MEDICINE_NAME}</strong>
+                            <div class="row text-center small mt-1 text-dark">
+                                <div class="col-4 border-end">Dosage: <b>${p.MEDICINE_DOSAGE}</b></div>
+                                <div class="col-4 border-end">Frequency: <b>${p.MEDICINE_FREQUENCY}</b></div>
+                                <div class="col-4">Duration: <b>${p.MEDICINE_DURATION}</b></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 const card = document.createElement('div');
                 card.style.border = '1px solid #e2e8f0';
                 card.style.borderRadius = '8px';
@@ -177,7 +237,6 @@ window.viewPatientHistory = async function(patientId) {
                 card.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start border-bottom pb-1 mb-2">
                         <div>
-                            <strong class="text-primary" style="color: #4f46e5 !important;">${p.MEDICINE_NAME}</strong>
                             <span class="small text-muted d-block">Prescribed by Dr. ${p.DOCTOR_FIRSTNAME} ${p.DOCTOR_LASTNAME}</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
@@ -190,12 +249,8 @@ window.viewPatientHistory = async function(patientId) {
                             </button>
                         </div>
                     </div>
-                    <div class="row text-center small mb-2 text-dark">
-                        <div class="col-4 border-end">Dosage: <b>${p.MEDICINE_DOSAGE}</b></div>
-                        <div class="col-4 border-end">Frequency: <b>${p.MEDICINE_FREQUENCY}</b></div>
-                        <div class="col-4">Duration: <b>${p.MEDICINE_DURATION}</b></div>
-                    </div>
-                    <div class="small">
+                    ${medicinesListHTML}
+                    <div class="small mt-2">
                         <span class="text-muted d-block" style="font-size: 11px;">Symptoms / Diagnosis:</span>
                         <strong class="text-dark">${p.SYMPTOMS}</strong>
                     </div>
@@ -354,10 +409,28 @@ window.downloadPrescriptionPDF = async function(prescId) {
         document.getElementById('pdf-presc-symptoms').innerText = presc.SYMPTOMS || 'No symptoms/diagnosis logs saved.';
 
         // Medicine details
-        document.getElementById('pdf-presc-med-name').innerText = presc.MEDICINE_NAME;
-        document.getElementById('pdf-presc-med-dosage').innerText = presc.MEDICINE_DOSAGE;
-        document.getElementById('pdf-presc-med-freq').innerText = presc.MEDICINE_FREQUENCY;
-        document.getElementById('pdf-presc-med-dur').innerText = presc.MEDICINE_DURATION;
+        const tbody = document.getElementById('pdf-presc-tbody');
+        tbody.innerHTML = '';
+        try {
+            const parsedMeds = JSON.parse(presc.MEDICINE_NAME);
+            if(Array.isArray(parsedMeds)) {
+                parsedMeds.forEach(m => {
+                    tbody.innerHTML += `<tr style="border-bottom: 1px solid #e2e8f0; color: #0f172a; font-weight: 600;">
+                        <td style="padding: 15px 10px;">${m.name}</td>
+                        <td style="padding: 15px 10px;">${m.dosage}</td>
+                        <td style="padding: 15px 10px;">${m.frequency}</td>
+                        <td style="padding: 15px 10px;">${m.duration}</td>
+                    </tr>`;
+                });
+            } else throw new Error();
+        } catch(e) {
+            tbody.innerHTML = `<tr style="border-bottom: 1px solid #e2e8f0; color: #0f172a; font-weight: 600;">
+                <td style="padding: 15px 10px;">${presc.MEDICINE_NAME}</td>
+                <td style="padding: 15px 10px;">${presc.MEDICINE_DOSAGE}</td>
+                <td style="padding: 15px 10px;">${presc.MEDICINE_FREQUENCY}</td>
+                <td style="padding: 15px 10px;">${presc.MEDICINE_DURATION}</td>
+            </tr>`;
+        }
 
         // Perform PDF generation
         const safeFirstName = (data.patient.PATIENT_FIRSTNAME || '').replace(/[^a-zA-Z0-9]/g, '_');
@@ -474,7 +547,7 @@ window.printInvoiceAlternative = async function(billId) {
                         <div class="small text-secondary mb-3">
                             <strong>Observed Symptoms / Diagnosis:</strong> ${data.PRESCRIPTION_SYMPTOMS || 'No symptoms/diagnosis logs saved.'}
                         </div>
-                        \${data.MEDICINE_NAME ? `
+                        ${data.MEDICINE_NAME ? `
                         <table class="table table-sm table-borderless text-dark m-0" style="font-size: 0.9rem;">
                             <thead>
                                 <tr class="border-bottom text-muted">
@@ -507,19 +580,19 @@ window.printInvoiceAlternative = async function(billId) {
                         <tbody>
                             <tr>
                                 <td class="py-3 px-3">Consultation & Physician Visit Fees</td>
-                                <td class="py-3 px-3 text-end">$\${data.CONSULTATION_CHARGES.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end">₹${data.CONSULTATION_CHARGES.toFixed(2)}</td>
                             </tr>
                             <tr>
                                 <td class="py-3 px-3">Diagnostics & Lab Services</td>
-                                <td class="py-3 px-3 text-end">$\${data.LAB_CHARGES.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end">₹${data.LAB_CHARGES.toFixed(2)}</td>
                             </tr>
                             <tr>
                                 <td class="py-3 px-3">Medication & Pharmacy Charges</td>
-                                <td class="py-3 px-3 text-end">$\${data.MEDICINE_CHARGES.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end">₹${data.MEDICINE_CHARGES.toFixed(2)}</td>
                             </tr>
                             <tr class="fw-bold fs-5 table-light">
                                 <td class="py-3 px-3">TOTAL AMOUNT DUE</td>
-                                <td class="py-3 px-3 text-end text-primary" style="color: #0d9488 !important;">$\${data.TOTAL_AMOUNT.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end text-primary" style="color: #0d9488 !important;">₹${data.TOTAL_AMOUNT.toFixed(2)}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -570,6 +643,28 @@ window.printPrescriptionAlternative = function(prescId) {
         if (!printWindow) {
             alert('Please allow popups to use the print alternative.');
             return;
+        }
+
+        let medicinesListHTML = '';
+        try {
+            const parsedMeds = JSON.parse(presc.MEDICINE_NAME);
+            if (Array.isArray(parsedMeds)) {
+                parsedMeds.forEach(m => {
+                    medicinesListHTML += `<tr>
+                        <td><strong>${m.name}</strong></td>
+                        <td>${m.dosage}</td>
+                        <td>${m.frequency}</td>
+                        <td>${m.duration}</td>
+                    </tr>`;
+                });
+            } else throw new Error();
+        } catch(e) {
+            medicinesListHTML = `<tr>
+                <td><strong>${presc.MEDICINE_NAME}</strong></td>
+                <td>${presc.MEDICINE_DOSAGE}</td>
+                <td>${presc.MEDICINE_FREQUENCY}</td>
+                <td>${presc.MEDICINE_DURATION}</td>
+            </tr>`;
         }
 
         printWindow.document.write(`
@@ -644,12 +739,7 @@ window.printPrescriptionAlternative = function(prescId) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td><strong>\${presc.MEDICINE_NAME}</strong></td>
-                                    <td>\${presc.MEDICINE_DOSAGE}</td>
-                                    <td>\${presc.MEDICINE_FREQUENCY}</td>
-                                    <td>\${presc.MEDICINE_DURATION}</td>
-                                </tr>
+                                \${medicinesListHTML}
                             </tbody>
                         </table>
                     </div>

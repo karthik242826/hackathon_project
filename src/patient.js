@@ -85,12 +85,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         prescriptions.forEach(p => {
+            let medicinesListHTML = '';
+            try {
+                const parsedMeds = JSON.parse(p.MEDICINE_NAME);
+                if (Array.isArray(parsedMeds)) {
+                    parsedMeds.forEach(m => {
+                        medicinesListHTML += `
+                            <div class="mb-2 pb-2 border-bottom">
+                                <h6 class="fw-bold text-primary m-0">${m.name}</h6>
+                                <div class="row g-2 text-center mt-1">
+                                    <div class="col-4 border-end">
+                                        <small class="text-muted d-block">Dosage</small>
+                                        <strong>${m.dosage}</strong>
+                                    </div>
+                                    <div class="col-4 border-end">
+                                        <small class="text-muted d-block">Frequency</small>
+                                        <strong>${m.frequency}</strong>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted d-block">Duration</small>
+                                        <strong>${m.duration}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else throw new Error();
+            } catch(e) {
+                medicinesListHTML = `
+                    <div class="mb-2 pb-2 border-bottom">
+                        <h6 class="fw-bold text-primary m-0">${p.MEDICINE_NAME}</h6>
+                        <div class="row g-2 text-center mt-1">
+                            <div class="col-4 border-end">
+                                <small class="text-muted d-block">Dosage</small>
+                                <strong>${p.MEDICINE_DOSAGE}</strong>
+                            </div>
+                            <div class="col-4 border-end">
+                                <small class="text-muted d-block">Frequency</small>
+                                <strong>${p.MEDICINE_FREQUENCY}</strong>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted d-block">Duration</small>
+                                <strong>${p.MEDICINE_DURATION}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
             const card = document.createElement('div');
             card.className = 'prescription-card';
             card.innerHTML = `
                 <div class="d-flex justify-content-between align-items-start mb-3 border-bottom pb-2">
                     <div>
-                        <h5 class="fw-bold text-primary m-0">${p.MEDICINE_NAME}</h5>
                         <small class="text-muted">Prescribed by Dr. ${p.DOCTOR_FIRSTNAME} ${p.DOCTOR_LASTNAME} (${p.DOCTOR_SPECIALIZATION})</small>
                     </div>
                     <div class="d-flex align-items-center gap-2">
@@ -103,20 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </button>
                     </div>
                 </div>
-                <div class="row g-2 text-center mb-3">
-                    <div class="col-4 border-end">
-                        <small class="text-muted d-block">Dosage</small>
-                        <strong>${p.MEDICINE_DOSAGE}</strong>
-                    </div>
-                    <div class="col-4 border-end">
-                        <small class="text-muted d-block">Frequency</small>
-                        <strong>${p.MEDICINE_FREQUENCY}</strong>
-                    </div>
-                    <div class="col-4">
-                        <small class="text-muted d-block">Duration</small>
-                        <strong>${p.MEDICINE_DURATION}</strong>
-                    </div>
-                </div>
+                ${medicinesListHTML}
                 <div>
                     <span class="text-muted small d-block">Recorded Symptoms / Diagnosis</span>
                     <p class="m-0 small fw-bold">${p.SYMPTOMS}</p>
@@ -188,17 +222,36 @@ window.downloadInvoicePDF = async function(billId) {
         // Clinical summary
         document.getElementById('pdf-clinical-symptoms').innerText = data.PRESCRIPTION_SYMPTOMS || 'No symptoms/diagnosis logs saved.';
         
+        const tbody = document.getElementById('pdf-presc-tbody');
+        if (tbody) tbody.innerHTML = '';
         if (data.MEDICINE_NAME) {
-            document.getElementById('pdf-presc-row').style.display = 'table-row';
-            document.getElementById('pdf-medicine-name').innerText = data.MEDICINE_NAME;
-            document.getElementById('pdf-medicine-dosage').innerText = data.MEDICINE_DOSAGE;
-            document.getElementById('pdf-medicine-frequency').innerText = data.MEDICINE_FREQUENCY;
-            document.getElementById('pdf-medicine-duration').innerText = data.MEDICINE_DURATION;
+            try {
+                const parsedMeds = JSON.parse(data.MEDICINE_NAME);
+                if(Array.isArray(parsedMeds)) {
+                    parsedMeds.forEach(m => {
+                        tbody.innerHTML += `<tr style="color: #0f172a;">
+                            <td style="padding: 8px 0;">${m.name}</td>
+                            <td style="padding: 8px 0;">${m.dosage}</td>
+                            <td style="padding: 8px 0;">${m.frequency}</td>
+                            <td style="padding: 8px 0;">${m.duration}</td>
+                        </tr>`;
+                    });
+                } else throw new Error();
+            } catch(e) {
+                tbody.innerHTML = `<tr style="color: #0f172a;">
+                    <td style="padding: 8px 0;">${data.MEDICINE_NAME}</td>
+                    <td style="padding: 8px 0;">${data.MEDICINE_DOSAGE}</td>
+                    <td style="padding: 8px 0;">${data.MEDICINE_FREQUENCY}</td>
+                    <td style="padding: 8px 0;">${data.MEDICINE_DURATION}</td>
+                </tr>`;
+            }
         } else {
-            document.getElementById('pdf-medicine-name').innerText = 'No medication prescribed.';
-            document.getElementById('pdf-medicine-dosage').innerText = '-';
-            document.getElementById('pdf-medicine-frequency').innerText = '-';
-            document.getElementById('pdf-medicine-duration').innerText = '-';
+            if (tbody) tbody.innerHTML = `<tr style="color: #0f172a;">
+                <td style="padding: 8px 0;">No medication prescribed.</td>
+                <td style="padding: 8px 0;">-</td>
+                <td style="padding: 8px 0;">-</td>
+                <td style="padding: 8px 0;">-</td>
+            </tr>`;
         }
 
         // Charges
@@ -333,6 +386,28 @@ window.printInvoiceAlternative = async function(billId) {
             minute: '2-digit'
         });
 
+        let medicinesListHTML = '';
+        try {
+            const parsedMeds = JSON.parse(data.MEDICINE_NAME);
+            if (Array.isArray(parsedMeds)) {
+                parsedMeds.forEach(m => {
+                    medicinesListHTML += `<tr>
+                        <td class="py-2"><strong>${m.name}</strong></td>
+                        <td class="py-2">${m.dosage}</td>
+                        <td class="py-2">${m.frequency}</td>
+                        <td class="py-2">${m.duration}</td>
+                    </tr>`;
+                });
+            } else throw new Error();
+        } catch(e) {
+            medicinesListHTML = `<tr>
+                <td class="py-2"><strong>${data.MEDICINE_NAME}</strong></td>
+                <td class="py-2">${data.MEDICINE_DOSAGE}</td>
+                <td class="py-2">${data.MEDICINE_FREQUENCY}</td>
+                <td class="py-2">${data.MEDICINE_DURATION}</td>
+            </tr>`;
+        }
+
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
@@ -395,7 +470,7 @@ window.printInvoiceAlternative = async function(billId) {
                         <div class="small text-secondary mb-3">
                             <strong>Observed Symptoms / Diagnosis:</strong> ${data.PRESCRIPTION_SYMPTOMS || 'No symptoms/diagnosis logs saved.'}
                         </div>
-                        \${data.MEDICINE_NAME ? `
+                        ${data.MEDICINE_NAME ? `
                         <table class="table table-sm table-borderless text-dark m-0" style="font-size: 0.9rem;">
                             <thead>
                                 <tr class="border-bottom text-muted">
@@ -406,12 +481,7 @@ window.printInvoiceAlternative = async function(billId) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td class="py-2"><strong>\${data.MEDICINE_NAME}</strong></td>
-                                    <td class="py-2">\${data.MEDICINE_DOSAGE}</td>
-                                    <td class="py-2">\${data.MEDICINE_FREQUENCY}</td>
-                                    <td class="py-2">\${data.MEDICINE_DURATION}</td>
-                                </tr>
+                                \${medicinesListHTML}
                             </tbody>
                         </table>
                         ` : '<div class="text-muted small">No medication prescribed.</div>'}
@@ -422,25 +492,25 @@ window.printInvoiceAlternative = async function(billId) {
                         <thead class="table-header-custom">
                             <tr>
                                 <th class="py-2 px-3">Charge Description</th>
-                                <th class="py-2 px-3 text-end" style="width: 150px;">Amount ($)</th>
+                                <th class="py-2 px-3 text-end" style="width: 150px;">Amount (₹)</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td class="py-3 px-3">Consultation & Physician Visit Fees</td>
-                                <td class="py-3 px-3 text-end">$\${data.CONSULTATION_CHARGES.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end">₹${data.CONSULTATION_CHARGES.toFixed(2)}</td>
                             </tr>
                             <tr>
                                 <td class="py-3 px-3">Diagnostics & Lab Services</td>
-                                <td class="py-3 px-3 text-end">$\${data.LAB_CHARGES.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end">₹${data.LAB_CHARGES.toFixed(2)}</td>
                             </tr>
                             <tr>
                                 <td class="py-3 px-3">Medication & Pharmacy Charges</td>
-                                <td class="py-3 px-3 text-end">$\${data.MEDICINE_CHARGES.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end">₹${data.MEDICINE_CHARGES.toFixed(2)}</td>
                             </tr>
                             <tr class="fw-bold fs-5 table-light">
                                 <td class="py-3 px-3">TOTAL AMOUNT DUE</td>
-                                <td class="py-3 px-3 text-end text-primary" style="color: #0284c7 !important;">$\${data.TOTAL_AMOUNT.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end text-primary" style="color: #0d9488 !important;">₹${data.TOTAL_AMOUNT.toFixed(2)}</td>
                             </tr>
                         </tbody>
                     </table>

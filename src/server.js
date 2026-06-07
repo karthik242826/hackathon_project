@@ -1,6 +1,17 @@
-const express = require('express');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+const express = require('express');
 const Database = require('better-sqlite3');
+const axios = require('axios');
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
+
+// ─── Third-Party Services Init ────────────────────────────────────
+const FAST2SMS_KEY = process.env.FAST2SMS_KEY || '';
+const razorpay = new Razorpay({
+    key_id:     process.env.RAZORPAY_KEY_ID     || '',
+    key_secret: process.env.RAZORPAY_KEY_SECRET || ''
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -97,7 +108,7 @@ app.post('/api/save-prescription', (req, res) => {
 
 // Add Patient Route
 app.post('/api/add-patient', (req, res) => {
-    const { firstname, lastname, dob, gender, bloodgroup, address, phno, username, password } = req.body;
+    const { firstname, lastname, dob, gender, bloodgroup, address, phno, username, password, email } = req.body;
     if (!firstname || !lastname || !dob || !gender || !bloodgroup || !address || !phno || !username || !password) {
         return res.status(400).json({ error: 'All fields, including username and password, are required.' });
     }
@@ -109,10 +120,10 @@ app.post('/api/add-patient', (req, res) => {
         }
 
         const stmt = db.prepare(`
-            INSERT INTO PATIENT (PATIENT_FIRSTNAME, PATIENT_LASTNAME, PATIENT_DOB, PATIENT_GENDER, PATIENT_BLOODGROUP, PATIENT_ADDRESS, PATIENT_PHNO, PATIENT_USERNAME, PATIENT_PASSWORD)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO PATIENT (PATIENT_FIRSTNAME, PATIENT_LASTNAME, PATIENT_DOB, PATIENT_GENDER, PATIENT_BLOODGROUP, PATIENT_ADDRESS, PATIENT_PHNO, PATIENT_USERNAME, PATIENT_PASSWORD, PATIENT_EMAIL)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
-        const info = stmt.run(firstname, lastname, dob, gender, bloodgroup, address, phno, username, password);
+        const info = stmt.run(firstname, lastname, dob, gender, bloodgroup, address, phno, username, password, email || null);
         res.status(200).json({ success: true, id: info.lastInsertRowid });
     } catch (err) {
         console.error('Failed to add patient:', err);
@@ -301,7 +312,7 @@ app.get('/api/bill-invoice-details/:billId', (req, res) => {
 
 // Create a new Doctor (Admin only)
 app.post('/api/admin/create-doctor', (req, res) => {
-    const { firstname, lastname, specialization, phone, availability, password, username } = req.body;
+    const { firstname, lastname, specialization, phone, availability, password, username, email } = req.body;
 
     if (!firstname || !lastname || !specialization || !phone || !availability || !password || !username) {
         return res.status(400).json({ error: 'All fields, including username, are required to register a doctor.' });
@@ -315,10 +326,10 @@ app.post('/api/admin/create-doctor', (req, res) => {
         }
 
         const stmt = db.prepare(`
-            INSERT INTO DOCTOR (DOCTOR_FIRSTNAME, DOCTOR_LASTNAME, DOCTOR_SPECIALIZATION, DOCTOR_AVAILABILITY, DOCTOR_PHNO, DOCTOR_PASSWORD, DOCTOR_USERNAME)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO DOCTOR (DOCTOR_FIRSTNAME, DOCTOR_LASTNAME, DOCTOR_SPECIALIZATION, DOCTOR_AVAILABILITY, DOCTOR_PHNO, DOCTOR_PASSWORD, DOCTOR_USERNAME, DOCTOR_EMAIL)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `);
-        const info = stmt.run(firstname, lastname, specialization, availability, phone, password, username);
+        const info = stmt.run(firstname, lastname, specialization, availability, phone, password, username, email || null);
         res.status(200).json({ success: true, id: info.lastInsertRowid });
     } catch (err) {
         console.error('Failed to create doctor:', err);
@@ -505,7 +516,8 @@ function ensureReceptionistTable() {
             RECEP_NAME     TEXT NOT NULL,
             RECEP_USERNAME TEXT NOT NULL UNIQUE,
             RECEP_PASSWORD TEXT NOT NULL,
-            RECEP_PHNO     TEXT
+            RECEP_PHNO     TEXT,
+            RECEP_EMAIL    TEXT
         )
     `).run();
 }
@@ -530,6 +542,9 @@ function ensureDatabaseMigrations() {
                 db.prepare("UPDATE DOCTOR SET DOCTOR_USERNAME = ? WHERE D_ID = ?").run(username, d.D_ID);
             }
         }
+        if (!docCols.includes('DOCTOR_EMAIL')) {
+            db.prepare("ALTER TABLE DOCTOR ADD COLUMN DOCTOR_EMAIL TEXT").run();
+        }
         db.prepare("UPDATE DOCTOR SET DOCTOR_PASSWORD = 'doctor123' WHERE DOCTOR_PASSWORD IS NULL").run();
 
         // 2. PATIENT table updates
@@ -546,7 +561,27 @@ function ensureDatabaseMigrations() {
         if (!patCols.includes('PATIENT_PASSWORD')) {
             db.prepare("ALTER TABLE PATIENT ADD COLUMN PATIENT_PASSWORD TEXT").run();
         }
+        if (!patCols.includes('PATIENT_EMAIL')) {
+            db.prepare("ALTER TABLE PATIENT ADD COLUMN PATIENT_EMAIL TEXT").run();
+        }
         db.prepare("UPDATE PATIENT SET PATIENT_PASSWORD = 'patient123' WHERE PATIENT_PASSWORD IS NULL").run();
+
+        // 3. RECEPTIONIST table updates (in case it existed before ensureReceptionistTable was updated)
+        const recCols = db.prepare("PRAGMA table_info(RECEPTIONIST)").all().map(c => c.name);
+        if (!recCols.includes('RECEP_EMAIL')) {
+            db.prepare("ALTER TABLE RECEPTIONIST ADD COLUMN RECEP_EMAIL TEXT").run();
+        }
+
+        // 4. OTP Tokens Table
+        db.prepare(`
+            CREATE TABLE IF NOT EXISTS OTP_TOKENS (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                ROLE TEXT NOT NULL,
+                USERNAME TEXT NOT NULL,
+                OTP_CODE TEXT NOT NULL,
+                EXPIRY INTEGER NOT NULL
+            )
+        `).run();
 
         console.log("Database migrations completed successfully.");
     } catch (err) {
@@ -569,7 +604,7 @@ app.get('/api/admin/receptionists', (req, res) => {
 
 // Create Receptionist
 app.post('/api/admin/create-receptionist', (req, res) => {
-    const { name, username, password, phone } = req.body;
+    const { name, username, password, phone, email } = req.body;
     if (!name || !username || !password) {
         return res.status(400).json({ error: 'Name, username, and password are required.' });
     }
@@ -581,10 +616,10 @@ app.post('/api/admin/create-receptionist', (req, res) => {
             return res.status(409).json({ error: `Username "${username}" is already taken. Choose a different one.` });
         }
         const stmt = db.prepare(`
-            INSERT INTO RECEPTIONIST (RECEP_NAME, RECEP_USERNAME, RECEP_PASSWORD, RECEP_PHNO)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO RECEPTIONIST (RECEP_NAME, RECEP_USERNAME, RECEP_PASSWORD, RECEP_PHNO, RECEP_EMAIL)
+            VALUES (?, ?, ?, ?, ?)
         `);
-        const info = stmt.run(name, username, password, phone || null);
+        const info = stmt.run(name, username, password, phone || null, email || null);
         res.status(200).json({ success: true, id: info.lastInsertRowid });
     } catch (err) {
         console.error('Failed to create receptionist:', err);
@@ -629,6 +664,193 @@ app.post('/api/admin/verify-receptionist-login', (req, res) => {
     }
 });
 
+
+// ==========================================
+// 8. AUTH API ROUTES (Forgot/Reset Password)
+// ==========================================
+app.post('/api/auth/forgot-password', async (req, res) => {
+    const { role, identifier } = req.body;
+    try {
+        let user = null;
+        let queryRole = role.toLowerCase();
+        
+        if (queryRole === 'doctor') {
+            user = db.prepare('SELECT D_ID as id, DOCTOR_USERNAME as username, DOCTOR_PHNO as phone, DOCTOR_EMAIL as email FROM DOCTOR WHERE DOCTOR_USERNAME = ? OR DOCTOR_PHNO = ?').get(identifier, identifier);
+        } else if (queryRole === 'patient') {
+            user = db.prepare('SELECT PID as id, PATIENT_USERNAME as username, PATIENT_PHNO as phone, PATIENT_EMAIL as email FROM PATIENT WHERE PATIENT_USERNAME = ? OR PATIENT_PHNO = ?').get(identifier, identifier);
+        } else if (queryRole === 'receptionist') {
+            user = db.prepare('SELECT RID as id, RECEP_USERNAME as username, RECEP_PHNO as phone, RECEP_EMAIL as email FROM RECEPTIONIST WHERE RECEP_USERNAME = ? OR RECEP_PHNO = ?').get(identifier, identifier);
+        } else if (queryRole === 'admin') {
+            if (identifier === 'admin') {
+                user = { id: 1, username: 'admin', phone: '1234567890', email: 'admin@hms.com' };
+            }
+        }
+
+        if (!user) {
+            return res.status(404).json({ error: 'Account not found with that username or phone number.' });
+        }
+
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiry = Date.now() + 15 * 60 * 1000;
+
+        db.prepare('INSERT INTO OTP_TOKENS (ROLE, USERNAME, OTP_CODE, EXPIRY) VALUES (?, ?, ?, ?)').run(queryRole, user.username, otpCode, expiry);
+
+        console.log(`\n========================================`);
+        console.log(`🔒 OTP GENERATED for ${queryRole} (${user.username})`);
+        console.log(`🔑 Code: ${otpCode}`);
+        console.log(`📱 Phone: ${user.phone || 'N/A'} | 📧 Email: ${user.email || 'N/A'}`);
+        console.log(`========================================\n`);
+
+        // ─── Fast2SMS: Send Real SMS (tries OTP route, falls back to Quick route) ──────
+        let smsSent = false;
+        let smsStatusMsg = '';
+        if (FAST2SMS_KEY && FAST2SMS_KEY !== 'YOUR_FAST2SMS_API_KEY_HERE' && user.phone) {
+            try {
+                // Try OTP route first
+                const otpRes = await axios.get('https://www.fast2sms.com/dev/bulkV2', {
+                    params: { authorization: FAST2SMS_KEY, variables_values: otpCode, route: 'otp', numbers: user.phone },
+                    headers: { 'cache-control': 'no-cache' },
+                    validateStatus: () => true, // don't throw on 4xx — read the body
+                    timeout: 8000
+                });
+
+                if (otpRes.data && otpRes.data.return === true) {
+                    smsSent = true;
+                    console.log(`✅ SMS sent via OTP route to ${user.phone}`);
+                } else {
+                    // OTP route unavailable (needs verification/credit) → try Quick SMS route
+                    console.warn(`⚠️ OTP route: ${otpRes.data ? otpRes.data.message : 'failed'} → trying Quick route...`);
+                    const qRes = await axios.get('https://www.fast2sms.com/dev/bulkV2', {
+                        params: {
+                            authorization: FAST2SMS_KEY,
+                            message: `Your HMS security code is: ${otpCode}. Valid for 15 minutes. Do not share.`,
+                            language: 'english',
+                            route: 'q',
+                            numbers: user.phone
+                        },
+                        headers: { 'cache-control': 'no-cache' },
+                        validateStatus: () => true,
+                        timeout: 8000
+                    });
+                    if (qRes.data && qRes.data.return === true) {
+                        smsSent = true;
+                        console.log(`✅ SMS sent via Quick route to ${user.phone}`);
+                    } else {
+                        smsStatusMsg = qRes.data ? qRes.data.message : 'Unknown error';
+                        console.warn(`⚠️ Quick route also failed: ${smsStatusMsg}`);
+                    }
+                }
+            } catch (smsErr) {
+                console.error('⚠️ Fast2SMS network error:', smsErr.message);
+            }
+        }
+
+        const message = smsSent
+            ? `Security code sent via SMS to registered phone number.`
+            : `Security code generated. Check server console (SMS not configured or unavailable).`;
+
+        res.json({ success: true, message, mockCode: otpCode, username: user.username, smsSent });
+    } catch (err) {
+        console.error('Forgot password failed:', err);
+        res.status(500).json({ error: 'Failed to process forgot password request.' });
+    }
+});
+
+app.post('/api/auth/reset-password', (req, res) => {
+    const { role, username, otp, newPassword } = req.body;
+    try {
+        let queryRole = role.toLowerCase();
+        
+        const validOtp = db.prepare('SELECT ID FROM OTP_TOKENS WHERE ROLE = ? AND USERNAME = ? AND OTP_CODE = ? AND EXPIRY > ? ORDER BY ID DESC LIMIT 1')
+            .get(queryRole, username, otp, Date.now());
+
+        if (!validOtp) {
+            return res.status(400).json({ error: 'Invalid or expired security code.' });
+        }
+
+        if (queryRole === 'doctor') {
+            db.prepare('UPDATE DOCTOR SET DOCTOR_PASSWORD = ? WHERE DOCTOR_USERNAME = ?').run(newPassword, username);
+        } else if (queryRole === 'patient') {
+            db.prepare('UPDATE PATIENT SET PATIENT_PASSWORD = ? WHERE PATIENT_USERNAME = ?').run(newPassword, username);
+        } else if (queryRole === 'receptionist') {
+            db.prepare('UPDATE RECEPTIONIST SET RECEP_PASSWORD = ? WHERE RECEP_USERNAME = ?').run(newPassword, username);
+        } else if (queryRole === 'admin') {
+            if (username !== 'admin') {
+                return res.status(404).json({ error: 'Admin account not found.' });
+            }
+        }
+
+        db.prepare('DELETE FROM OTP_TOKENS WHERE ID = ?').run(validOtp.ID);
+
+        res.json({ success: true, message: 'Password reset successfully. You can now login.' });
+    } catch (err) {
+        console.error('Reset password failed:', err);
+        res.status(500).json({ error: 'Failed to reset password.' });
+    }
+});
+
+// ==========================================
+// 9. PAYMENT API ROUTES (Razorpay UPI)
+// ==========================================
+
+// Create a Razorpay order for a bill
+app.post('/api/payment/create-order', async (req, res) => {
+    const { billId, amount, currency } = req.body;
+    if (!billId || !amount) {
+        return res.status(400).json({ error: 'billId and amount are required.' });
+    }
+    try {
+        if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === 'YOUR_RAZORPAY_KEY_ID_HERE') {
+            return res.status(503).json({ error: 'Razorpay is not configured. Please add your API keys to the .env file.' });
+        }
+        const order = await razorpay.orders.create({
+            amount: Math.round(parseFloat(amount) * 100), // Convert ₹ to paise
+            currency: currency || 'INR',
+            receipt: `hms_bill_${billId}`,
+            notes: { bill_id: billId }
+        });
+        res.json({ success: true, order, keyId: process.env.RAZORPAY_KEY_ID });
+    } catch (err) {
+        console.error('Razorpay order creation failed:', err);
+        res.status(500).json({ error: 'Failed to create payment order. Check Razorpay credentials.' });
+    }
+});
+
+// Verify Razorpay payment signature and update bill status
+app.post('/api/payment/verify', (req, res) => {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, billId } = req.body;
+    try {
+        const secret = process.env.RAZORPAY_KEY_SECRET || '';
+        const body = razorpay_order_id + '|' + razorpay_payment_id;
+        const expectedSig = crypto.createHmac('sha256', secret).update(body).digest('hex');
+
+        if (expectedSig !== razorpay_signature) {
+            return res.status(400).json({ error: 'Payment verification failed. Invalid signature.' });
+        }
+
+        // Mark bill as PAID
+        const result = db.prepare(`
+            UPDATE BILLS SET PAYMENT_STATUS = 'PAID', PAYMENT_METHOD = 'UPI' WHERE BILL_ID = ?
+        `).run(billId);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Bill not found.' });
+        }
+
+        console.log(`✅ Payment verified for Bill #${billId} | Payment ID: ${razorpay_payment_id}`);
+        res.json({ success: true, message: 'Payment successful. Bill marked as PAID.', paymentId: razorpay_payment_id });
+    } catch (err) {
+        console.error('Payment verification failed:', err);
+        res.status(500).json({ error: 'Failed to verify payment.' });
+    }
+});
+
+// Get Razorpay config (key_id only — safe for frontend)
+app.get('/api/payment/config', (req, res) => {
+    const keyId = process.env.RAZORPAY_KEY_ID || '';
+    const configured = keyId && keyId !== 'YOUR_RAZORPAY_KEY_ID_HERE';
+    res.json({ configured, keyId: configured ? keyId : null });
+});
 
 // ==========================================
 // 3. EXPRESS V5 SAFE CATCH-ALL MIDDLEWARE

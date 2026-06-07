@@ -143,23 +143,30 @@
                     <label class="form-label fw-bold">Observed Symptoms:</label>
                     <textarea id="form-symptoms" class="form-control" rows="2" required placeholder="e.g., Dry cough, persistent fever"></textarea>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Medicine Name:</label>
-                    <input type="text" id="form-medicine" class="form-control" required placeholder="e.g., Amoxicillin">
-                </div>
-                
-                <div class="row g-2 mb-4">
-                    <div class="col-4">
-                        <label class="form-label small fw-bold">Dosage:</label>
-                        <input type="text" id="form-dosage" class="form-control" required placeholder="500mg">
+                <div id="medicines-container" class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold m-0">Prescribed Medicines:</label>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMedicineRow()">➕ Add Medicine</button>
                     </div>
-                    <div class="col-4">
-                        <label class="form-label small fw-bold">Frequency:</label>
-                        <input type="text" id="form-frequency" class="form-control" required placeholder="Twice a day">
-                    </div>
-                    <div class="col-4">
-                        <label class="form-label small fw-bold">Duration:</label>
-                        <input type="text" id="form-duration" class="form-control" required placeholder="5 Days">
+                    <div class="medicine-row border p-3 mb-2 rounded bg-light position-relative">
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Medicine Name:</label>
+                            <input type="text" class="form-control med-name" required placeholder="e.g., Amoxicillin">
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <label class="form-label small fw-bold">Dosage:</label>
+                                <input type="text" class="form-control med-dosage" required placeholder="500mg">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small fw-bold">Frequency:</label>
+                                <input type="text" class="form-control med-freq" required placeholder="Twice a day">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small fw-bold">Duration:</label>
+                                <input type="text" class="form-control med-duration" required placeholder="5 Days">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-dark w-100 py-2 fw-bold">Save & Commit Prescription</button>
@@ -432,12 +439,12 @@
                             <th style="padding: 10px; border-radius: 0 4px 4px 0; text-align: left;">Duration</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="pdf-presc-tbody">
                         <tr style="border-bottom: 1px solid #e2e8f0; color: #0f172a; font-weight: 600;">
-                            <td style="padding: 15px 10px;" id="pdf-presc-med-name">-</td>
-                            <td style="padding: 15px 10px;" id="pdf-presc-med-dosage">-</td>
-                            <td style="padding: 15px 10px;" id="pdf-presc-med-freq">-</td>
-                            <td style="padding: 15px 10px;" id="pdf-presc-med-dur">-</td>
+                            <td style="padding: 15px 10px;">-</td>
+                            <td style="padding: 15px 10px;">-</td>
+                            <td style="padding: 15px 10px;">-</td>
+                            <td style="padding: 15px 10px;">-</td>
                         </tr>
                     </tbody>
                 </table>

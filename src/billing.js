@@ -37,10 +37,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (p) {
                     document.getElementById('prev-doc-name').innerText = `Dr. ${p.DOCTOR_FIRSTNAME} ${p.DOCTOR_LASTNAME} (${p.DOCTOR_SPECIALIZATION})`;
                     document.getElementById('prev-symptoms').innerText = p.SYMPTOMS;
-                    document.getElementById('prev-medicine').innerText = p.MEDICINE_NAME;
-                    document.getElementById('prev-dosage').innerText = p.MEDICINE_DOSAGE;
-                    document.getElementById('prev-frequency').innerText = p.MEDICINE_FREQUENCY;
-                    document.getElementById('prev-duration').innerText = p.MEDICINE_DURATION;
+                    let medHTML = '';
+                    try {
+                        const parsedMeds = JSON.parse(p.MEDICINE_NAME);
+                        if (Array.isArray(parsedMeds)) {
+                            parsedMeds.forEach(m => {
+                                medHTML += `<div class="mb-1 border-bottom border-secondary-subtle pb-1"><strong>${m.name}</strong> - ${m.dosage} / ${m.frequency} / ${m.duration}</div>`;
+                            });
+                        } else throw new Error();
+                    } catch(e) {
+                        medHTML = `<div class="mb-1"><strong>${p.MEDICINE_NAME}</strong> - ${p.MEDICINE_DOSAGE} / ${p.MEDICINE_FREQUENCY} / ${p.MEDICINE_DURATION}</div>`;
+                    }
+                    document.getElementById('prev-medicine-list').innerHTML = medHTML;
                     previewDiv.classList.remove('d-none');
                 } else {
                     previewDiv.classList.add('d-none');
@@ -103,6 +111,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const statusBadge = bill.PAYMENT_STATUS === 'PAID' 
                 ? `<span class="badge-paid">Paid</span>` 
                 : `<span class="badge-pending">Pending</span>`;
+
+            // UPI Pay button — shown only for PENDING bills
+            const payBtn = bill.PAYMENT_STATUS !== 'PAID'
+                ? `<button class="btn-upi-pay" id="upi-btn-${bill.BILL_ID}" onclick="initiatePayment(${bill.BILL_ID}, ${bill.TOTAL_AMOUNT}, '${bill.PATIENT_FIRSTNAME} ${bill.PATIENT_LASTNAME}')">
+                      <i class="bi bi-phone-fill"></i> Pay via UPI
+                   </button>`
+                : `<span class="text-success fw-semibold" style="font-size:0.8rem;"><i class="bi bi-check-circle-fill"></i> Settled</span>`;
             
             tr.innerHTML = `
                 <td><b>INV-${bill.BILL_ID}</b></td>
@@ -112,7 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><code class="text-secondary">${bill.PAYMENT_METHOD}</code></td>
                 <td>${statusBadge}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" style="font-size: 0.85rem;" onclick="downloadInvoicePDF(${bill.BILL_ID})">
+                    ${payBtn}
+                    <button class="btn btn-sm btn-outline-primary ms-1" style="font-size: 0.85rem;" onclick="downloadInvoicePDF(${bill.BILL_ID})">
                         <i class="bi bi-file-earmark-pdf-fill"></i> PDF
                     </button>
                     <button class="btn btn-sm btn-outline-secondary" style="font-size: 0.85rem;" onclick="printInvoiceAlternative(${bill.BILL_ID})">
@@ -196,17 +212,36 @@ window.downloadInvoicePDF = async function(billId) {
         // Clinical summary
         document.getElementById('pdf-clinical-symptoms').innerText = data.PRESCRIPTION_SYMPTOMS || 'No symptoms/diagnosis logs saved.';
         
+        const tbody = document.getElementById('pdf-presc-tbody');
+        if (tbody) tbody.innerHTML = '';
         if (data.MEDICINE_NAME) {
-            document.getElementById('pdf-presc-row').style.display = 'table-row';
-            document.getElementById('pdf-medicine-name').innerText = data.MEDICINE_NAME;
-            document.getElementById('pdf-medicine-dosage').innerText = data.MEDICINE_DOSAGE;
-            document.getElementById('pdf-medicine-frequency').innerText = data.MEDICINE_FREQUENCY;
-            document.getElementById('pdf-medicine-duration').innerText = data.MEDICINE_DURATION;
+            try {
+                const parsedMeds = JSON.parse(data.MEDICINE_NAME);
+                if (Array.isArray(parsedMeds)) {
+                    parsedMeds.forEach(m => {
+                        tbody.innerHTML += `<tr style="color: #0f172a;">
+                            <td style="padding: 8px 0;">${m.name}</td>
+                            <td style="padding: 8px 0;">${m.dosage}</td>
+                            <td style="padding: 8px 0;">${m.frequency}</td>
+                            <td style="padding: 8px 0;">${m.duration}</td>
+                        </tr>`;
+                    });
+                } else throw new Error();
+            } catch(e) {
+                tbody.innerHTML = `<tr style="color: #0f172a;">
+                    <td style="padding: 8px 0;">${data.MEDICINE_NAME}</td>
+                    <td style="padding: 8px 0;">${data.MEDICINE_DOSAGE}</td>
+                    <td style="padding: 8px 0;">${data.MEDICINE_FREQUENCY}</td>
+                    <td style="padding: 8px 0;">${data.MEDICINE_DURATION}</td>
+                </tr>`;
+            }
         } else {
-            document.getElementById('pdf-medicine-name').innerText = 'No medication prescribed.';
-            document.getElementById('pdf-medicine-dosage').innerText = '-';
-            document.getElementById('pdf-medicine-frequency').innerText = '-';
-            document.getElementById('pdf-medicine-duration').innerText = '-';
+            if (tbody) tbody.innerHTML = `<tr style="color: #0f172a;">
+                <td style="padding: 8px 0;">No medication prescribed.</td>
+                <td style="padding: 8px 0;">-</td>
+                <td style="padding: 8px 0;">-</td>
+                <td style="padding: 8px 0;">-</td>
+            </tr>`;
         }
 
         // Charges
@@ -279,6 +314,28 @@ window.printInvoiceAlternative = async function(billId) {
             minute: '2-digit'
         });
 
+        let medicinesListHTML = '';
+        try {
+            const parsedMeds = JSON.parse(data.MEDICINE_NAME);
+            if (Array.isArray(parsedMeds)) {
+                parsedMeds.forEach(m => {
+                    medicinesListHTML += `<tr>
+                        <td class="py-2"><strong>${m.name}</strong></td>
+                        <td class="py-2">${m.dosage}</td>
+                        <td class="py-2">${m.frequency}</td>
+                        <td class="py-2">${m.duration}</td>
+                    </tr>`;
+                });
+            } else throw new Error();
+        } catch(e) {
+            medicinesListHTML = `<tr>
+                <td class="py-2"><strong>${data.MEDICINE_NAME}</strong></td>
+                <td class="py-2">${data.MEDICINE_DOSAGE}</td>
+                <td class="py-2">${data.MEDICINE_FREQUENCY}</td>
+                <td class="py-2">${data.MEDICINE_DURATION}</td>
+            </tr>`;
+        }
+
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
@@ -341,7 +398,7 @@ window.printInvoiceAlternative = async function(billId) {
                         <div class="small text-secondary mb-3">
                             <strong>Observed Symptoms / Diagnosis:</strong> ${data.PRESCRIPTION_SYMPTOMS || 'No symptoms/diagnosis logs saved.'}
                         </div>
-                        \${data.MEDICINE_NAME ? `
+                        ${data.MEDICINE_NAME ? `
                         <table class="table table-sm table-borderless text-dark m-0" style="font-size: 0.9rem;">
                             <thead>
                                 <tr class="border-bottom text-muted">
@@ -351,14 +408,9 @@ window.printInvoiceAlternative = async function(billId) {
                                     <th class="py-1">Duration</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="py-2"><strong>\${data.MEDICINE_NAME}</strong></td>
-                                    <td class="py-2">\${data.MEDICINE_DOSAGE}</td>
-                                    <td class="py-2">\${data.MEDICINE_FREQUENCY}</td>
-                                    <td class="py-2">\${data.MEDICINE_DURATION}</td>
-                                </tr>
-                            </tbody>
+                             <tbody>
+                                 ${medicinesListHTML}
+                             </tbody>
                         </table>
                         ` : '<div class="text-muted small">No medication prescribed.</div>'}
                     </div>
@@ -374,28 +426,28 @@ window.printInvoiceAlternative = async function(billId) {
                         <tbody>
                             <tr>
                                 <td class="py-3 px-3">Consultation & Physician Visit Fees</td>
-                                <td class="py-3 px-3 text-end">$\${data.CONSULTATION_CHARGES.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end">₹${data.CONSULTATION_CHARGES.toFixed(2)}</td>
                             </tr>
                             <tr>
                                 <td class="py-3 px-3">Diagnostics & Lab Services</td>
-                                <td class="py-3 px-3 text-end">$\${data.LAB_CHARGES.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end">₹${data.LAB_CHARGES.toFixed(2)}</td>
                             </tr>
                             <tr>
                                 <td class="py-3 px-3">Medication & Pharmacy Charges</td>
-                                <td class="py-3 px-3 text-end">$\${data.MEDICINE_CHARGES.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end">₹${data.MEDICINE_CHARGES.toFixed(2)}</td>
                             </tr>
                             <tr class="fw-bold fs-5 table-light">
                                 <td class="py-3 px-3">TOTAL AMOUNT DUE</td>
-                                <td class="py-3 px-3 text-end text-primary" style="color: #0d9488 !important;">$\${data.TOTAL_AMOUNT.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end text-primary" style="color: #0d9488 !important;">₹${data.TOTAL_AMOUNT.toFixed(2)}</td>
                             </tr>
                         </tbody>
                     </table>
 
                     <div class="d-flex justify-content-between align-items-end mt-5">
                         <div class="text-secondary small">
-                            <strong>Payment Method:</strong> \${data.PAYMENT_METHOD}<br>
-                            <strong>Payment Status:</strong> <span class="fw-bold text-success">\${data.PAYMENT_STATUS}</span><br>
-                            <strong>Date Issued:</strong> \${formattedBillDate}
+                             <strong>Payment Method:</strong> ${data.PAYMENT_METHOD}<br>
+                             <strong>Payment Status:</strong> <span class="fw-bold text-success">${data.PAYMENT_STATUS}</span><br>
+                             <strong>Date Issued:</strong> ${formattedBillDate}
                         </div>
                         <div class="text-center text-muted small">
                             <div style="border-bottom: 1px solid #cbd5e1; width: 180px; margin-bottom: 5px;"></div>
@@ -424,3 +476,116 @@ window.printInvoiceAlternative = async function(billId) {
         alert('Failed to launch printing overlay.');
     }
 };
+
+// ============================================================
+// Razorpay UPI Payment Flow
+// ============================================================
+
+// Inject payment success toast once
+(function injectPaymentToast() {
+    const toast = document.createElement('div');
+    toast.id = 'paymentToast';
+    toast.className = 'payment-toast';
+    toast.innerHTML = `<i class="bi bi-check-circle-fill" style="font-size:1.2rem;"></i><span id="paymentToastMsg">Payment successful!</span>`;
+    document.body.appendChild(toast);
+})();
+
+function showPaymentToast(msg) {
+    const toast = document.getElementById('paymentToast');
+    document.getElementById('paymentToastMsg').textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 4000);
+}
+
+async function initiatePayment(billId, amount, patientName) {
+    const btn = document.getElementById(`upi-btn-${billId}`);
+    if (btn) { btn.disabled = true; btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Opening...`; }
+
+    try {
+        // Step 1: Get Razorpay config (key_id) from server
+        const configRes = await fetch('/api/payment/config');
+        const config = await configRes.json();
+
+        if (!config.configured) {
+            alert('⚠️ Razorpay is not configured yet.\n\nPlease add your RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to the .env file and restart the server.\n\nGet keys at: https://razorpay.com → Settings → API Keys');
+            if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-phone-fill"></i> Pay via UPI`; }
+            return;
+        }
+
+        // Step 2: Create Razorpay order on backend
+        const orderRes = await fetch('/api/payment/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ billId, amount, currency: 'INR' })
+        });
+        const orderData = await orderRes.json();
+
+        if (!orderRes.ok || !orderData.success) {
+            alert('Failed to create payment order: ' + (orderData.error || 'Unknown error'));
+            if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-phone-fill"></i> Pay via UPI`; }
+            return;
+        }
+
+        // Step 3: Open Razorpay checkout popup
+        const options = {
+            key: config.keyId,
+            amount: orderData.order.amount,
+            currency: 'INR',
+            name: 'HMS Hospital',
+            description: `Invoice INV-${billId}`,
+            image: './hearth-beat-line-icon-health-medical-heartbeat-symbol-isolated-white-background-hospital-logo-vector-illustration-209787695-removebg-preview.png',
+            order_id: orderData.order.id,
+            handler: async function(response) {
+                // Step 4: Verify payment signature on backend & update DB
+                try {
+                    const verifyRes = await fetch('/api/payment/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            razorpay_order_id:   response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature:  response.razorpay_signature,
+                            billId
+                        })
+                    });
+                    const verifyData = await verifyRes.json();
+                    if (verifyRes.ok && verifyData.success) {
+                        showPaymentToast(`✅ INV-${billId} Paid — ₹${amount.toFixed(2)} via UPI`);
+                        // Reload billing dashboard to reflect PAID status
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        alert('Payment received but verification failed: ' + (verifyData.error || 'Unknown error'));
+                    }
+                } catch (verifyErr) {
+                    alert('Network error during payment verification.');
+                }
+            },
+            prefill: {
+                name: patientName,
+                email: '',
+                contact: ''
+            },
+            theme: {
+                color: '#7c3aed'
+            },
+            modal: {
+                ondismiss: function() {
+                    if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-phone-fill"></i> Pay via UPI`; }
+                }
+            }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function(response) {
+            alert(`Payment failed: ${response.error.description}`);
+            if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-phone-fill"></i> Pay via UPI`; }
+        });
+        rzp.open();
+
+    } catch (err) {
+        console.error('Payment initiation error:', err);
+        alert('Payment initiation failed. Check console for details.');
+        if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-phone-fill"></i> Pay via UPI`; }
+    }
+}
+

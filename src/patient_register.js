@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dob: document.getElementById('dob').value,
             gender: document.getElementById('gender').value,
             bloodgroup: document.getElementById('bloodgroup').value.trim(),
+            email: document.getElementById('email').value.trim(),
             phno: document.getElementById('phno').value.trim(),
             address: document.getElementById('address').value.trim(),
             username: document.getElementById('patient-username').value.trim(),

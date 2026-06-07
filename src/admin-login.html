@@ -280,6 +280,18 @@
         }
 
         .error-btn:hover { background: rgba(239, 68, 68, 0.25); }
+
+        /* Forgot Password Modal Styles */
+        .fp-modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); }
+        .fp-modal.show { display: flex; justify-content: center; align-items: center; }
+        .fp-modal-content { background-color: #1e1b4b; border-radius: 15px; padding: 30px; border: 1px solid rgba(139, 92, 246, 0.3); width: 90%; max-width: 400px; color: white; }
+        .fp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .fp-header h2 { font-size: 20px; color: #f1f5f9; }
+        .fp-close-btn { color: #aaa; font-size: 28px; cursor: pointer; }
+        .fp-step { display: none; }
+        .fp-step.active { display: block; }
+        .fp-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; font-family: 'Plus Jakarta Sans'; }
+        .fp-input { width: 100%; padding: 10px; margin-bottom: 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-family: 'Plus Jakarta Sans'; }
     </style>
 </head>
 <body>
@@ -324,9 +336,13 @@
                 <span>Only the system administrator can access this panel. All actions are logged.</span>
             </div>
 
-            <a href="./index.html" class="back-link">
-                <i class="bi bi-arrow-left"></i> Back to HMS Home
-            </a>
+            <div style="display: flex; justify-content: center; gap: 10px; align-items: center; margin-top: 24px;">
+                <a href="#" class="back-link" id="adminFpLink" style="margin-top: 0;">Forgot Password?</a>
+                <span style="color: #64748b;">|</span>
+                <a href="./index.html" class="back-link" style="margin-top: 0;">
+                    <i class="bi bi-arrow-left"></i> Back to HMS Home
+                </a>
+            </div>
         </div>
     </div>
 
@@ -376,6 +392,82 @@
 
         document.getElementById('errorOverlay').addEventListener('click', function(e) {
             if (e.target === this) closeError();
+        });
+
+        // ─── FORGOT PASSWORD ─────────────────────────────────────────────────────────
+        const fpModalHtml = `
+        <div id="fpModal" class="fp-modal">
+            <div class="fp-modal-content">
+                <div class="fp-header">
+                    <h2>Forgot Password</h2>
+                    <span class="fp-close-btn" id="fpCloseBtn">&times;</span>
+                </div>
+                <div id="fpStep1" class="fp-step active">
+                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">Enter admin username to receive security code.</p>
+                    <input type="text" id="fpIdentifier" class="fp-input" placeholder="Admin Username" required>
+                    <button class="fp-btn" id="fpRequestBtn">Send Security Code</button>
+                </div>
+                <div id="fpStep2" class="fp-step">
+                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">Enter the 6-digit code and your new password.</p>
+                    <input type="text" id="fpOtp" class="fp-input" placeholder="6-digit Security Code" required>
+                    <input type="password" id="fpNewPassword" class="fp-input" placeholder="New Password" required>
+                    <input type="password" id="fpConfirmPassword" class="fp-input" placeholder="Confirm Password" required>
+                    <button class="fp-btn" id="fpResetBtn">Reset Password</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', fpModalHtml);
+
+        const fpModal = document.getElementById('fpModal');
+        let currentUsername = '';
+
+        document.getElementById('adminFpLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('fpIdentifier').value = '';
+            document.getElementById('fpStep1').classList.add('active');
+            document.getElementById('fpStep2').classList.remove('active');
+            fpModal.classList.add('show');
+        });
+
+        document.getElementById('fpCloseBtn').addEventListener('click', () => fpModal.classList.remove('show'));
+
+        document.getElementById('fpRequestBtn').addEventListener('click', async () => {
+            const identifier = document.getElementById('fpIdentifier').value.trim();
+            if (!identifier) return alert('Enter username');
+            
+            try {
+                const res = await fetch('/api/auth/forgot-password', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: 'admin', identifier })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    currentUsername = data.username;
+                    alert(`SUCCESS: ${data.message}\n\n[MOCK MODE] Your Security Code is: ${data.mockCode}`);
+                    document.getElementById('fpStep1').classList.remove('active');
+                    document.getElementById('fpStep2').classList.add('active');
+                } else { alert(data.error); }
+            } catch (err) { alert('Network error'); }
+        });
+
+        document.getElementById('fpResetBtn').addEventListener('click', async () => {
+            const otp = document.getElementById('fpOtp').value.trim();
+            const newPassword = document.getElementById('fpNewPassword').value;
+            const confirmPassword = document.getElementById('fpConfirmPassword').value;
+            if (!otp || !newPassword) return alert('Fill all fields');
+            if (newPassword !== confirmPassword) return alert('Passwords do not match');
+
+            try {
+                const res = await fetch('/api/auth/reset-password', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: 'admin', username: currentUsername, otp, newPassword })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert('Password reset successfully! (Note: Since Admin is hardcoded in UI, this only simulates the DB change. You must update hardcoded UI credentials for real effect).');
+                    fpModal.classList.remove('show');
+                } else { alert(data.error); }
+            } catch (err) { alert('Network error'); }
         });
     </script>
 </body>
