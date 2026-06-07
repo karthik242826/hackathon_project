@@ -1,248 +1,170 @@
-if (sessionStorage.getItem('hms_doctor_auth') !== 'true') {
-    window.location.href = './doctor-login.html';
+if (sessionStorage.getItem('hms_patient_auth') !== 'true') {
+    window.location.href = './patient-login.html';
 }
 
-const LOGGED_IN_DOCTOR_ID = parseInt(sessionStorage.getItem('hms_doctor_id')) || 1; 
+const LOGGED_IN_PATIENT_ID = parseInt(sessionStorage.getItem('hms_patient_id')) || 1;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Inject current date context cleanly into header UI
-    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', dateOptions);
-    
-    // Execute data fetch lifecycle
-    loadDoctorDashboardData();
-    setupFormInterceptor();
-});
+    loadPatientDashboard();
 
-// 1. READ PIPELINE: Pull data out of hms.db through our server endpoints
-async function loadDoctorDashboardData() {
-    try {
-        const response = await fetch(`/api/doctor-dashboard/${LOGGED_IN_DOCTOR_ID}`);
-        if (!response.ok) throw new Error('Network response returned error codes');
-        
-        const data = await response.json();
+    async function loadPatientDashboard() {
+        try {
+            const response = await fetch(`/api/patient-dashboard/${LOGGED_IN_PATIENT_ID}`);
+            if (!response.ok) throw new Error('Failed to retrieve patient portal datasets');
+            const data = await response.json();
+            window.patientDashboardData = data;
 
-        // Bind Doctor details to layout profile nodes
-        document.getElementById('doctor-name').innerText = `${data.doctor.DOCTOR_FIRSTNAME} ${data.doctor.DOCTOR_LASTNAME}`;
-        document.getElementById('doctor-specialization').innerText = data.doctor.DOCTOR_SPECIALIZATION;
+            // Bind profile data
+            document.getElementById('patient-fullname').innerText = `${data.patient.PATIENT_FIRSTNAME} ${data.patient.PATIENT_LASTNAME}`;
+            document.getElementById('detail-pid').innerText = `PID-${data.patient.PID}`;
+            document.getElementById('detail-dob').innerText = data.patient.PATIENT_DOB;
+            document.getElementById('detail-gender').innerText = data.patient.PATIENT_GENDER;
+            document.getElementById('detail-blood').innerText = data.patient.PATIENT_BLOODGROUP;
+            document.getElementById('detail-phone').innerText = data.patient.PATIENT_PHNO;
+            document.getElementById('detail-address').innerText = data.patient.PATIENT_ADDRESS;
 
-        // Compute metrics panel counters dynamically
-        document.getElementById('count-appointments').innerText = data.appointments.length;
-        const pendingCount = data.appointments.filter(a => a.APPOINTMENT_STATUS === 'SCHEDULED').length;
-        document.getElementById('count-pending').innerText = pendingCount;
+            // Bind metrics
+            document.getElementById('metric-visits').innerText = data.appointments.length;
+            document.getElementById('metric-prescriptions').innerText = data.prescriptions.length;
+            
+            const unpaidCount = data.bills.filter(b => b.PAYMENT_STATUS === 'PENDING').length;
+            document.getElementById('metric-unpaid').innerText = unpaidCount;
 
-        // Render rows dynamically into table body viewport
-        const tbody = document.getElementById('appointments-tbody');
-        tbody.innerHTML = ''; // Clear existing static design rows
+            // Render appointments table
+            renderAppointments(data.appointments);
 
-        if (data.appointments.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#7f8c8d;">No appointments scheduled for today.</td></tr>`;
+            // Render prescriptions
+            renderPrescriptions(data.prescriptions);
+
+            // Render bills table
+            renderBills(data.bills);
+
+        } catch (error) {
+            console.error('Error loading patient dashboard:', error);
+        }
+    }
+
+    function renderAppointments(appointments) {
+        const tbody = document.getElementById('patient-appts-tbody');
+        tbody.innerHTML = '';
+
+        if (appointments.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No appointments found.</td></tr>';
             return;
         }
 
-        data.appointments.forEach(row => {
+        appointments.forEach(a => {
             const tr = document.createElement('tr');
+            let badge = '';
+            if (a.APPOINTMENT_STATUS === 'SCHEDULED') {
+                badge = '<span class="badge-scheduled">Scheduled</span>';
+            } else if (a.APPOINTMENT_STATUS === 'COMPLETED') {
+                badge = '<span class="badge-completed">Completed</span>';
+            } else {
+                badge = '<span class="badge bg-danger">Cancelled</span>';
+            }
+
             tr.innerHTML = `
-                <td><b>${row.APPOINTMENT_TIME}</b></td>
-                <td>${row.PATIENT_FIRSTNAME} ${row.PATIENT_LASTNAME}</td>
-                <td><span class="badge bg-light text-dark border">${row.APPOINTMENT_VISIT_TYPE}</span></td>
-                <td><code class="status-${row.APPOINTMENT_STATUS.toLowerCase()}">${row.APPOINTMENT_STATUS}</code></td>
+                <td>Dr. ${a.DOCTOR_FIRSTNAME} ${a.DOCTOR_LASTNAME}</td>
+                <td><code class="text-secondary">${a.DOCTOR_SPECIALIZATION}</code></td>
+                <td>${a.APPOINTMENT_DATE} (${a.APPOINTMENT_TIME})</td>
+                <td><span class="badge bg-light text-dark border">${a.APPOINTMENT_VISIT_TYPE}</span></td>
+                <td>${badge}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderPrescriptions(prescriptions) {
+        const container = document.getElementById('prescriptions-container');
+        container.innerHTML = '';
+
+        if (prescriptions.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center py-3">No active prescriptions located.</p>';
+            return;
+        }
+
+        prescriptions.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'prescription-card';
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start mb-3 border-bottom pb-2">
+                    <div>
+                        <h5 class="fw-bold text-primary m-0">${p.MEDICINE_NAME}</h5>
+                        <small class="text-muted">Prescribed by Dr. ${p.DOCTOR_FIRSTNAME} ${p.DOCTOR_LASTNAME} (${p.DOCTOR_SPECIALIZATION})</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-dark border">Date: ${p.APPOINTMENT_DATE}</span>
+                        <button class="btn btn-sm btn-outline-success" style="font-size: 0.85rem;" onclick="downloadPrescriptionPDF(${p.PRESCRIPTION_ID})">
+                            <i class="bi bi-file-earmark-pdf-fill"></i> PDF
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" style="font-size: 0.85rem;" onclick="printPrescriptionAlternative(${p.PRESCRIPTION_ID})">
+                            <i class="bi bi-printer-fill"></i> Print
+                        </button>
+                    </div>
+                </div>
+                <div class="row g-2 text-center mb-3">
+                    <div class="col-4 border-end">
+                        <small class="text-muted d-block">Dosage</small>
+                        <strong>${p.MEDICINE_DOSAGE}</strong>
+                    </div>
+                    <div class="col-4 border-end">
+                        <small class="text-muted d-block">Frequency</small>
+                        <strong>${p.MEDICINE_FREQUENCY}</strong>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Duration</small>
+                        <strong>${p.MEDICINE_DURATION}</strong>
+                    </div>
+                </div>
+                <div>
+                    <span class="text-muted small d-block">Recorded Symptoms / Diagnosis</span>
+                    <p class="m-0 small fw-bold">${p.SYMPTOMS}</p>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function renderBills(bills) {
+        const tbody = document.getElementById('patient-bills-tbody');
+        tbody.innerHTML = '';
+
+        if (bills.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No invoices found.</td></tr>';
+            return;
+        }
+
+        bills.forEach(b => {
+            const tr = document.createElement('tr');
+            const formattedDate = new Date(b.BILL_DATE).toLocaleDateString();
+            const badge = b.PAYMENT_STATUS === 'PAID' 
+                ? '<span class="badge-paid">Paid</span>' 
+                : '<span class="badge-pending">Pending</span>';
+
+            tr.innerHTML = `
+                <td><b>INV-${b.BILL_ID}</b></td>
+                <td>${formattedDate}</td>
+                <td>₹${b.CONSULTATION_CHARGES.toFixed(2)}</td>
+                <td>₹${b.LAB_CHARGES.toFixed(2)}</td>
+                <td>₹${b.MEDICINE_CHARGES.toFixed(2)}</td>
+                <td><b>₹${b.TOTAL_AMOUNT.toFixed(2)}</b></td>
+                <td>${badge}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-info" style="font-size: 0.85rem;" onclick="viewPatientHistory(${row.PATIENT_ID})">
-                        📁 View File
+                    <button class="btn btn-sm btn-outline-primary" style="font-size: 0.85rem;" onclick="downloadInvoicePDF(${b.BILL_ID})">
+                        <i class="bi bi-file-earmark-pdf-fill"></i> PDF
                     </button>
-                </td>
-                <td>
-                    ${row.APPOINTMENT_STATUS === 'SCHEDULED' ? 
-                    `<button class="btn btn-sm btn-primary py-1" onclick="openPrescriptionModal(${row.AID}, ${row.PATIENT_ID})">Write Prescription</button>` : 
-                    `<button class="btn btn-sm btn-secondary py-1" disabled style="opacity: 0.65;">Completed</button>`}
+                    <button class="btn btn-sm btn-outline-secondary" style="font-size: 0.85rem;" onclick="printInvoiceAlternative(${b.BILL_ID})">
+                        <i class="bi bi-printer-fill"></i> Print
+                    </button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
-    } catch (error) {
-        console.error('Critical initialization failure in frontend dashboard pipeline:', error);
     }
-}
+});
 
-// Modal Toggle Controls
-function openPrescriptionModal(appointmentId, patientId) {
-    document.getElementById('form-appointment-id').value = appointmentId;
-    document.getElementById('form-patient-id').value = patientId;
-    document.getElementById('prescription-modal').classList.remove('hidden');
-}
-
-function closePrescriptionModal() {
-    document.getElementById('prescription-modal').classList.add('hidden');
-    document.getElementById('prescription-form').reset();
-}
-
-// 2. WRITE PIPELINE: Intercept submit actions to pass values down to SQL engine
-function setupFormInterceptor() {
-    document.getElementById('prescription-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const payload = {
-            appointment_id: parseInt(document.getElementById('form-appointment-id').value),
-            patient_id: parseInt(document.getElementById('form-patient-id').value),
-            doctor_id: LOGGED_IN_DOCTOR_ID,
-            diagnosis: document.getElementById('form-diagnosis').value,
-            symptoms: document.getElementById('form-symptoms').value,
-            medicine_name: document.getElementById('form-medicine').value,
-            dosage: document.getElementById('form-dosage').value,
-            frequency: document.getElementById('form-frequency').value,
-            duration: document.getElementById('form-duration').value
-        };
-
-        try {
-            const response = await fetch('/api/save-prescription', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                alert('Prescription successfully committed to hms.db!');
-                closePrescriptionModal();
-                loadDoctorDashboardData(); // Refresh list layout instantly to reflect update
-            } else {
-                alert('Database insertion transaction failed.');
-            }
-        } catch (err) {
-            console.error('Network failure writing to execution pipeline:', err);
-        }
-    });
-}
-
-// View patient medical history dashboard
-window.viewPatientHistory = async function(patientId) {
-    const modalElement = document.getElementById('patientHistoryModal');
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
-
-    // Reset fields to loading state
-    document.getElementById('hist-fullname').innerText = 'Loading...';
-    document.getElementById('hist-patient-meta').innerText = 'Gathering patient profile records...';
-    document.getElementById('hist-phone').innerText = '-';
-    document.getElementById('hist-address').innerText = '-';
-    
-    document.getElementById('hist-visits-tbody').innerHTML = `<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>`;
-    document.getElementById('hist-prescriptions-container').innerHTML = `<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-success"></div></div>`;
-    document.getElementById('hist-bills-tbody').innerHTML = `<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm text-warning"></div></td></tr>`;
-
-    try {
-        const response = await fetch(`/api/patient-dashboard/${patientId}`);
-        if (!response.ok) throw new Error('Failed to retrieve patient medical file');
-        const data = await response.json();
-        window.currentPatientHistoryData = data;
-
-        // 1. Populate Profile Header
-        document.getElementById('hist-fullname').innerText = `${data.patient.PATIENT_FIRSTNAME} ${data.patient.PATIENT_LASTNAME}`;
-        document.getElementById('hist-patient-meta').innerText = `ID: PID-${data.patient.PID} | DOB: ${data.patient.PATIENT_DOB} | Blood Group: ${data.patient.PATIENT_BLOODGROUP}`;
-        document.getElementById('hist-phone').innerText = data.patient.PATIENT_PHNO;
-        document.getElementById('hist-address').innerText = data.patient.PATIENT_ADDRESS;
-
-        // 2. Populate Visit Logs Table
-        const visitTbody = document.getElementById('hist-visits-tbody');
-        visitTbody.innerHTML = '';
-        if (data.appointments.length === 0) {
-            visitTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No appointments logged.</td></tr>';
-        } else {
-            data.appointments.forEach(a => {
-                const tr = document.createElement('tr');
-                const statusClass = a.APPOINTMENT_STATUS === 'COMPLETED' ? 'text-success' : 'text-primary';
-                tr.innerHTML = `
-                    <td><b>${a.APPOINTMENT_DATE}</b> / <code>${a.APPOINTMENT_TIME}</code></td>
-                    <td>Dr. ${a.DOCTOR_FIRSTNAME} ${a.DOCTOR_LASTNAME}</td>
-                    <td><span class="badge bg-light text-dark border">${a.APPOINTMENT_VISIT_TYPE}</span></td>
-                    <td><strong class="${statusClass}">${a.APPOINTMENT_STATUS}</strong></td>
-                `;
-                visitTbody.appendChild(tr);
-            });
-        }
-
-        // 3. Populate Prescriptions Cards List
-        const prescContainer = document.getElementById('hist-prescriptions-container');
-        prescContainer.innerHTML = '';
-        if (data.prescriptions.length === 0) {
-            prescContainer.innerHTML = '<p class="text-muted text-center py-3">No prescriptions recorded for this patient.</p>';
-        } else {
-            data.prescriptions.forEach(p => {
-                const card = document.createElement('div');
-                card.style.border = '1px solid #e2e8f0';
-                card.style.borderRadius = '8px';
-                card.style.padding = '12px';
-                card.style.marginBottom = '10px';
-                card.style.backgroundColor = '#f8fafc';
-                card.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-start border-bottom pb-1 mb-2">
-                        <div>
-                            <strong class="text-primary" style="color: #4f46e5 !important;">${p.MEDICINE_NAME}</strong>
-                            <span class="small text-muted d-block">Prescribed by Dr. ${p.DOCTOR_FIRSTNAME} ${p.DOCTOR_LASTNAME}</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-secondary small">Date: ${p.APPOINTMENT_DATE}</span>
-                            <button class="btn btn-sm btn-outline-success" style="font-size: 0.75rem;" onclick="downloadPrescriptionPDF(${p.PRESCRIPTION_ID})">
-                                <i class="bi bi-file-earmark-pdf-fill"></i> PDF
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary" style="font-size: 0.75rem;" onclick="printPrescriptionAlternative(${p.PRESCRIPTION_ID})">
-                                <i class="bi bi-printer-fill"></i> Print
-                            </button>
-                        </div>
-                    </div>
-                    <div class="row text-center small mb-2 text-dark">
-                        <div class="col-4 border-end">Dosage: <b>${p.MEDICINE_DOSAGE}</b></div>
-                        <div class="col-4 border-end">Frequency: <b>${p.MEDICINE_FREQUENCY}</b></div>
-                        <div class="col-4">Duration: <b>${p.MEDICINE_DURATION}</b></div>
-                    </div>
-                    <div class="small">
-                        <span class="text-muted d-block" style="font-size: 11px;">Symptoms / Diagnosis:</span>
-                        <strong class="text-dark">${p.SYMPTOMS}</strong>
-                    </div>
-                `;
-                prescContainer.appendChild(card);
-            });
-        }
-
-        // 4. Populate Bills Transactions Table
-        const billsTbody = document.getElementById('hist-bills-tbody');
-        billsTbody.innerHTML = '';
-        if (data.bills.length === 0) {
-            billsTbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No financial invoices found.</td></tr>';
-        } else {
-            data.bills.forEach(b => {
-                const tr = document.createElement('tr');
-                const formattedDate = new Date(b.BILL_DATE).toLocaleDateString();
-                const badge = b.PAYMENT_STATUS === 'PAID' 
-                    ? '<span class="badge bg-success">Paid</span>' 
-                    : '<span class="badge bg-warning text-dark">Pending</span>';
-                
-                tr.innerHTML = `
-                    <td><code>INV-${b.BILL_ID}</code></td>
-                    <td>${formattedDate}</td>
-                    <td class="small">Consult: ₹${b.CONSULTATION_CHARGES} | Lab: ₹${b.LAB_CHARGES} | Meds: ₹${b.MEDICINE_CHARGES}</td>
-                    <td><b>₹${b.TOTAL_AMOUNT.toFixed(2)}</b></td>
-                    <td>${badge}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem;" onclick="downloadInvoicePDF(${b.BILL_ID})">
-                            <i class="bi bi-file-earmark-pdf-fill"></i> PDF
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary" style="font-size: 0.75rem;" onclick="printInvoiceAlternative(${b.BILL_ID})">
-                            <i class="bi bi-printer-fill"></i> Print
-                        </button>
-                    </td>
-                `;
-                billsTbody.appendChild(tr);
-            });
-        }
-
-    } catch (error) {
-        console.error('Error fetching patient history data:', error);
-        alert('Could not compile patient medical history lookup.');
-    }
-};
-
-// Download invoice PDF logic for Doctor Workspace
+// Download invoice PDF logic
 window.downloadInvoicePDF = async function(billId) {
     try {
         const response = await fetch(`/api/bill-invoice-details/${billId}`);
@@ -297,7 +219,6 @@ window.downloadInvoicePDF = async function(billId) {
         });
         document.getElementById('pdf-invoice-date').innerText = issuedDate;
 
-        // 2. Perform PDF generation
         const safeFirstName = (data.PATIENT_FIRSTNAME || '').replace(/[^a-zA-Z0-9]/g, '_');
         const safeLastName = (data.PATIENT_LASTNAME || '').replace(/[^a-zA-Z0-9]/g, '_');
         const opt = {
@@ -329,11 +250,11 @@ window.downloadInvoicePDF = async function(billId) {
     }
 };
 
-// Download prescription PDF logic for Doctor Workspace
+// Download prescription PDF logic
 window.downloadPrescriptionPDF = async function(prescId) {
     try {
-        if (!window.currentPatientHistoryData) throw new Error('No patient history records loaded.');
-        const data = window.currentPatientHistoryData;
+        if (!window.patientDashboardData) throw new Error('No patient dashboard data loaded.');
+        const data = window.patientDashboardData;
         const presc = data.prescriptions.find(p => p.PRESCRIPTION_ID === prescId);
         if (!presc) throw new Error('Prescription details not found.');
 
@@ -391,7 +312,7 @@ window.downloadPrescriptionPDF = async function(prescId) {
     }
 };
 
-// Alternative Native Print Invoice Logic for Doctor Portal
+// Alternative Native Print Invoice Logic
 window.printInvoiceAlternative = async function(billId) {
     try {
         const response = await fetch(`/api/bill-invoice-details/${billId}`);
@@ -420,9 +341,9 @@ window.printInvoiceAlternative = async function(billId) {
                 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
                 <style>
                     body { font-family: 'Plus Jakarta Sans', sans-serif; padding: 40px; background-color: #ffffff; color: #0f172a; }
-                    .invoice-header { border-bottom: 2px solid #0d9488; padding-bottom: 20px; margin-bottom: 30px; }
-                    .invoice-title { color: #0d9488; font-size: 28px; font-weight: 800; }
-                    .table-header-custom { background-color: #0d9488 !important; color: white !important; }
+                    .invoice-header { border-bottom: 2px solid #0284c7; padding-bottom: 20px; margin-bottom: 30px; }
+                    .invoice-title { color: #0284c7; font-size: 28px; font-weight: 800; }
+                    .table-header-custom { background-color: #0284c7 !important; color: white !important; }
                     @media print {
                         body { padding: 0; }
                         .no-print { display: none; }
@@ -519,7 +440,7 @@ window.printInvoiceAlternative = async function(billId) {
                             </tr>
                             <tr class="fw-bold fs-5 table-light">
                                 <td class="py-3 px-3">TOTAL AMOUNT DUE</td>
-                                <td class="py-3 px-3 text-end text-primary" style="color: #0d9488 !important;">$\${data.TOTAL_AMOUNT.toFixed(2)}</td>
+                                <td class="py-3 px-3 text-end text-primary" style="color: #0284c7 !important;">$\${data.TOTAL_AMOUNT.toFixed(2)}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -558,11 +479,11 @@ window.printInvoiceAlternative = async function(billId) {
     }
 };
 
-// Alternative Native Print Prescription Logic for Doctor Portal
+// Alternative Native Print Prescription Logic
 window.printPrescriptionAlternative = function(prescId) {
     try {
-        if (!window.currentPatientHistoryData) throw new Error('No history data loaded.');
-        const data = window.currentPatientHistoryData;
+        if (!window.patientDashboardData) throw new Error('No patient dashboard data loaded.');
+        const data = window.patientDashboardData;
         const presc = data.prescriptions.find(p => p.PRESCRIPTION_ID === prescId);
         if (!presc) throw new Error('Prescription details not found.');
 
@@ -714,10 +635,10 @@ document.addEventListener('DOMContentLoaded', () => {
             errorMsg.classList.add('hidden');
 
             try {
-                const response = await fetch('/api/doctor/change-password', {
+                const response = await fetch('/api/patient/change-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ doctorId: LOGGED_IN_DOCTOR_ID, oldPassword, newPassword })
+                    body: JSON.stringify({ patientId: LOGGED_IN_PATIENT_ID, oldPassword, newPassword })
                 });
 
                 const data = await response.json();

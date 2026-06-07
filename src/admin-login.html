@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login — HMS Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ambient background orbs */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -200px;
+            left: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            bottom: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 4s ease-in-out infinite reverse;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 50px 44px;
+            box-shadow:
+                0 32px 64px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .admin-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.2));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 50px;
+            padding: 6px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #a78bfa;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .admin-badge i { font-size: 14px; }
+
+        .login-header {
+            margin-bottom: 36px;
+        }
+
+        .login-header h1 {
+            font-size: 30px;
+            font-weight: 800;
+            color: #f8fafc;
+            line-height: 1.2;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 16px;
+            transition: color 0.2s;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 13px 14px 13px 42px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 14px;
+            color: #f1f5f9;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        .input-wrapper input::placeholder { color: #475569; }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.08);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+        }
+
+        .input-wrapper input:focus + i,
+        .input-wrapper i:has(~ input:focus) {
+            color: #8b5cf6;
+        }
+
+        .input-wrapper input:focus ~ i { color: #8b5cf6; }
+
+        /* Reorder — icon before input in DOM but visually positioned */
+        .input-icon-left { pointer-events: none; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(124, 58, 237, 0.4);
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(135deg, #6d28d9, #4338ca);
+            transform: translateY(-1px);
+            box-shadow: 0 12px 32px rgba(124, 58, 237, 0.5);
+        }
+
+        .submit-btn:active { transform: translateY(0); }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            font-size: 13px;
+            color: #64748b;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover { color: #a78bfa; }
+        .back-link i { margin-right: 4px; }
+
+        .security-note {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-top: 24px;
+            font-size: 12px;
+            color: #fca5a5;
+        }
+
+        .security-note i { font-size: 14px; flex-shrink: 0; }
+
+        /* Error Modal */
+        .error-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .error-overlay.show { display: flex; }
+
+        .error-box {
+            background: #1e1b4b;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 20px;
+            padding: 36px;
+            max-width: 360px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .error-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 24px;
+            color: #f87171;
+        }
+
+        .error-box h3 { color: #f1f5f9; font-size: 18px; margin-bottom: 8px; }
+        .error-box p { color: #94a3b8; font-size: 14px; margin-bottom: 24px; }
+
+        .error-btn {
+            padding: 10px 28px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            color: #f87171;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .error-btn:hover { background: rgba(239, 68, 68, 0.25); }
+    </style>
+</head>
+<body>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="admin-badge">
+                <i class="bi bi-shield-lock-fill"></i>
+                System Administrator
+            </div>
+
+            <div class="login-header">
+                <h1>Admin Control Panel</h1>
+                <p>Restricted access — authorized personnel only</p>
+            </div>
+
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label for="admin-username">Admin Username</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-person-fill input-icon-left"></i>
+                        <input type="text" id="admin-username" placeholder="Enter admin username" required autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="admin-password">Admin Password</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-lock-fill input-icon-left"></i>
+                        <input type="password" id="admin-password" placeholder="Enter admin password" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="loginSubmitBtn">
+                    <i class="bi bi-shield-check"></i>
+                    Authenticate & Enter
+                </button>
+            </form>
+
+            <div class="security-note">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Only the system administrator can access this panel. All actions are logged.</span>
+            </div>
+
+            <a href="./index.html" class="back-link">
+                <i class="bi bi-arrow-left"></i> Back to HMS Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorOverlay" class="error-overlay">
+        <div class="error-box">
+            <div class="error-icon">
+                <i class="bi bi-shield-x"></i>
+            </div>
+            <h3>Access Denied</h3>
+            <p id="errorMsg">Invalid admin credentials. This attempt has been recorded.</p>
+            <button class="error-btn" onclick="closeError()">Dismiss</button>
+        </div>
+    </div>
+
+    <script>
+        // ─── SINGLE ADMIN CREDENTIALS ────────────────────────────────────────────────
+        // Hardcoded single admin account — only one admin exists in the system
+        const ADMIN_CREDENTIALS = {
+            username: 'admin',
+            password: 'admin@hms2024'
+        };
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('admin-username').value.trim();
+            const password = document.getElementById('admin-password').value;
+
+            if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+                // Set session flag so admin.html knows auth is valid
+                sessionStorage.setItem('hms_admin_auth', 'true');
+                window.location.href = './admin.html';
+            } else {
+                showError('Invalid admin credentials. Access is denied and this attempt has been recorded.');
+            }
+        });
+
+        function showError(msg) {
+            document.getElementById('errorMsg').textContent = msg;
+            document.getElementById('errorOverlay').classList.add('show');
+        }
+
+        function closeError() {
+            document.getElementById('errorOverlay').classList.remove('show');
+        }
+
+        document.getElementById('errorOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeError();
+        });
+    </script>
+</body>
+</html>

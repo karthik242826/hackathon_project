@@ -1,105 +1,259 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DOCTOR DASHBOARD</title>
-    <link rel="stylesheet" href="./doctor.css">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Portal - HMS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-      /* Quick custom helper styles for our modal and states */
-      .hidden { display: none !important; }
-      .modal-backdrop-custom {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1050;
-      }
-      .modal-box { background: white; padding: 30px; border-radius: 8px; width: 550px; max-width: 90%; }
-      .status-indicator { width: 10px; height: 10px; background-color: #2ecc71; border-radius: 50%; display: inline-block; margin-right: 8px; }
-      .badge-visit { background-color: #1abc9c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; }
-      code { background: #f8f9fa; padding: 2px 6px; border-radius: 4px; color: #d63031; }
+        .hidden { display: none !important; }
+        :root {
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 16px;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background-color: #0f172a !important;
+        }
+
+        .profile-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        }
+
+        .metric-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .dashboard-section {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+            margin-bottom: 30px;
+        }
+
+        .badge-scheduled {
+            background-color: #dbeafe;
+            color: #1e40af;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-completed {
+            background-color: #d1fae5;
+            color: #065f46;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-paid {
+            background-color: #d1fae5;
+            color: #065f46;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .prescription-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background-color: #fafafa;
+        }
     </style>
-  </head>
-  <body>
-    
-    <nav class="navbar container-fluid bg-dark navbar-dark px-4">
-        <div class="logo">
-          <img src="./hearth-beat-line-icon-health-medical-heartbeat-symbol-isolated-white-background-hospital-logo-vector-illustration-209787695-removebg-preview.png" class="hospital-logo" style="height: 40px;">
-        </div>
-        <ul class="nav d-flex flex-row list-unstyled gap-4 mb-0">
-            <li><a href="./index.html" class="text-white text-decoration-none">Home</a></li>
-            <li><a href="#overview-section" class="text-white text-decoration-none">Overview</a></li>
-            <li><a href="#appointments-section" class="text-white text-decoration-none">My-Appointments</a></li>
-        </ul>
-        <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-outline-light p-2" onclick="openChangePasswordModal()">
-                <i class="bi bi-key-fill me-1"></i> Change Password
-            </button>
-            <a href="./index.html" class="btn btn-danger p-2">Log-out</a>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4 py-3">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="./index.html">
+                <img src="./hearth-beat-line-icon-health-medical-heartbeat-symbol-isolated-white-background-hospital-logo-vector-illustration-209787695-removebg-preview.png" style="height: 35px; margin-right: 10px;">
+                <span class="fw-bold text-white">HMS Patient Portal</span>
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-outline-light btn-sm" onclick="openChangePasswordModal()">
+                    <i class="bi bi-key-fill me-1"></i> Change Password
+                </button>
+                <a href="./index.html" class="btn btn-outline-danger btn-sm">Sign Out</a>
+            </div>
         </div>
     </nav>
 
     <div class="container my-5">
-      
-      <div class="row text-center mb-4">
-        <div class="col">
-          <h1 class="display-5 fw-bold">Welcome, Dr. <span id="doctor-name">Loading...</span></h1>
-          <p id="current-date" class="text-muted"></p>
-          <div class="profile d-flex flex-row justify-content-center align-items-center">
-            <span class="status-indicator"></span>
-            <strong>Active Session (<span id="doctor-specialization">General</span>)</strong>
-          </div>
-        </div>
-      </div>
-      
-      <div class="row g-4 mb-5 justify-content-center">
-        <div class="col-md-4">
-          <div class="card p-4 text-center shadow-sm border-start border-info border-4">
-            <span class="text-uppercase text-muted small fw-bold">Total Appointments</span>
-            <h2 class="display-4 fw-bold m-0" id="count-appointments">0</h2>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card p-4 text-center shadow-sm border-start border-warning border-4">
-            <span class="text-uppercase text-muted small fw-bold">Pending Actions</span>
-            <h2 class="display-4 fw-bold m-0 text-warning" id="count-pending">0</h2>
-          </div>
-        </div>
-      </div>
-
-      <div class="row" id="appointments-section">
-        <div class="col">
-          <div class="card p-4 shadow-sm bg-white">
-            <h3 class="mb-4 text-secondary">Today's Patient Schedule</h3>
-            <div class="table-responsive">
-              <table class="table table-hover align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th>Time Slot</th>
-                    <th>Patient Name</th>
-                    <th>Visit Type</th>
-                    <th>Status</th>
-                    <th>Medical Records</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="appointments-tbody">
-                  <tr>
-                    <td colspan="5" class="text-center text-muted">Awaiting connection pipeline transmission...</td>
-                  </tr>
-                </tbody>
-              </table>
+        <div class="row g-4">
+            <!-- Left Side: Profile Card -->
+            <div class="col-lg-4">
+                <div class="profile-card">
+                    <div class="text-center mb-4">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                            <i class="bi bi-person-fill text-secondary display-5"></i>
+                        </div>
+                        <h3 class="fw-bold mt-3 mb-1" id="patient-fullname">Loading...</h3>
+                        <p class="text-muted small">Registered Patient Profile</p>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="profile-details mt-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Patient ID</span>
+                            <span class="fw-bold" id="detail-pid">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Date of Birth</span>
+                            <span class="fw-bold" id="detail-dob">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Gender</span>
+                            <span class="fw-bold" id="detail-gender">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Blood Group</span>
+                            <span class="badge bg-danger fs-6" id="detail-blood">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Phone Number</span>
+                            <span class="fw-bold" id="detail-phone">-</span>
+                        </div>
+                        <div class="mt-3">
+                            <span class="text-muted d-block mb-1">Residential Address</span>
+                            <span class="fw-bold small d-block" id="detail-address">-</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
 
+            <!-- Right Side: Dashboard Tabs & Metrics -->
+            <div class="col-lg-8">
+                <!-- Metrics Grid -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="metric-card border-start border-primary border-4 text-center">
+                            <span class="text-muted text-uppercase small fw-bold">My Appointments</span>
+                            <h3 class="fw-bold display-6 mt-1 mb-0" id="metric-visits">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="metric-card border-start border-success border-4 text-center">
+                            <span class="text-muted text-uppercase small fw-bold">Active Prescriptions</span>
+                            <h3 class="fw-bold display-6 mt-1 mb-0" id="metric-prescriptions">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="metric-card border-start border-warning border-4 text-center">
+                            <span class="text-muted text-uppercase small fw-bold">Pending Invoices</span>
+                            <h3 class="fw-bold display-6 mt-1 mb-0" id="metric-unpaid">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointments list -->
+                <div class="dashboard-section">
+                    <h4 class="fw-bold mb-4"><i class="bi bi-calendar-event text-primary me-2"></i>My Appointment Logs</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Doctor</th>
+                                    <th>Specialization</th>
+                                    <th>Date/Time</th>
+                                    <th>Visit Type</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patient-appts-tbody">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Awaiting records fetch...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Prescriptions list -->
+                <div class="dashboard-section">
+                    <h4 class="fw-bold mb-4"><i class="bi bi-prescription text-success me-2"></i>My Active Prescriptions</h4>
+                    <div id="prescriptions-container">
+                        <p class="text-muted text-center py-3">No active prescriptions located.</p>
+                    </div>
+                </div>
+
+                <!-- Bills list -->
+                <div class="dashboard-section">
+                    <h4 class="fw-bold mb-4"><i class="bi bi-wallet2 text-warning me-2"></i>My Invoices & Billing History</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Invoice ID</th>
+                                    <th>Visit Date</th>
+                                    <th>Consult Fee</th>
+                                    <th>Lab Fee</th>
+                                    <th>Medicine Fee</th>
+                                    <th>Total Due</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patient-bills-tbody">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">Awaiting records fetch...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Change Password Modal -->
-    <div id="change-password-modal" class="modal-backdrop-custom hidden">
-        <div class="modal-box shadow" style="width: 400px;">
+    <div id="change-password-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1050;">
+        <div style="background: white; padding: 30px; border-radius: 8px; width: 400px; max-width: 90%;">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="m-0 text-primary"><i class="bi bi-key-fill me-2"></i>Change Password</h4>
                 <button type="button" class="btn-close" onclick="closeChangePasswordModal()"></button>
@@ -124,158 +278,17 @@
         </div>
     </div>
 
-    <div id="prescription-modal" class="modal-backdrop-custom hidden">
-        <div class="modal-box shadow">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="m-0 text-primary">Create New Patient Prescription</h4>
-                <button type="button" class="btn-close" onclick="closePrescriptionModal()"></button>
-            </div>
-            
-            <form id="prescription-form">
-                <input type="hidden" id="form-appointment-id">
-                <input type="hidden" id="form-patient-id">
-                
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Clinical Diagnosis Summary:</label>
-                    <input type="text" id="form-diagnosis" class="form-control" required placeholder="e.g., Acute Bronchitis">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Observed Symptoms:</label>
-                    <textarea id="form-symptoms" class="form-control" rows="2" required placeholder="e.g., Dry cough, persistent fever"></textarea>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Medicine Name:</label>
-                    <input type="text" id="form-medicine" class="form-control" required placeholder="e.g., Amoxicillin">
-                </div>
-                
-                <div class="row g-2 mb-4">
-                    <div class="col-4">
-                        <label class="form-label small fw-bold">Dosage:</label>
-                        <input type="text" id="form-dosage" class="form-control" required placeholder="500mg">
-                    </div>
-                    <div class="col-4">
-                        <label class="form-label small fw-bold">Frequency:</label>
-                        <input type="text" id="form-frequency" class="form-control" required placeholder="Twice a day">
-                    </div>
-                    <div class="col-4">
-                        <label class="form-label small fw-bold">Duration:</label>
-                        <input type="text" id="form-duration" class="form-control" required placeholder="5 Days">
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-dark w-100 py-2 fw-bold">Save & Commit Prescription</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Patient Medical & Transaction History Modal -->
-    <div class="modal fade" id="patientHistoryModal" tabindex="-1" aria-labelledby="patientHistoryModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);">
-                <div class="modal-header bg-dark text-white" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
-                    <h5 class="modal-title fw-bold" id="patientHistoryModalLabel">Patient Medical File & History</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <!-- Profile Header Summary -->
-                    <div class="card p-3 mb-4 bg-light border-0">
-                        <div class="row align-items-center">
-                            <div class="col-auto">
-                                <div class="bg-white rounded-circle p-2 text-center" style="width: 50px; height: 50px; line-height: 34px; font-size: 20px;">
-                                    👤
-                                </div>
-                            </div>
-                            <div class="col">
-                                <h5 class="fw-bold m-0" id="hist-fullname">-</h5>
-                                <span class="text-muted small" id="hist-patient-meta">ID: PID-00 | DOB: - | Blood Group: -</span>
-                            </div>
-                            <div class="col-md-auto text-md-end mt-2 mt-md-0">
-                                <span class="text-muted small d-block">Contact: <span id="hist-phone">-</span></span>
-                                <span class="text-muted small d-block" id="hist-address">-</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tabs/Sections -->
-                    <ul class="nav nav-tabs mb-3" id="historyTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active fw-bold" id="visits-tab" data-bs-toggle="tab" data-bs-target="#visits-panel" type="button" role="tab" aria-controls="visits-panel" aria-selected="true">Visit Logs</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link fw-bold" id="presc-tab" data-bs-toggle="tab" data-bs-target="#presc-panel" type="button" role="tab" aria-controls="presc-panel" aria-selected="false">Prescriptions</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link fw-bold" id="bills-tab" data-bs-toggle="tab" data-bs-target="#bills-panel" type="button" role="tab" aria-controls="bills-panel" aria-selected="false">Billing Transactions</button>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content" id="historyTabContent">
-                        <!-- Visit Logs Panel -->
-                        <div class="tab-pane fade show active" id="visits-panel" role="tabpanel" aria-labelledby="visits-tab">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover align-middle" style="font-size: 0.9rem;">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Date & Time</th>
-                                            <th>Physician</th>
-                                            <th>Visit Type</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="hist-visits-tbody">
-                                        <tr><td colspan="4" class="text-center text-muted">No appointments found.</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Prescriptions Panel -->
-                        <div class="tab-pane fade" id="presc-panel" role="tabpanel" aria-labelledby="presc-tab">
-                            <div id="hist-prescriptions-container">
-                                <p class="text-muted text-center py-3">No prescription records found.</p>
-                            </div>
-                        </div>
-
-                        <!-- Billing Transactions Panel -->
-                        <div class="tab-pane fade" id="bills-panel" role="tabpanel" aria-labelledby="bills-tab">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover align-middle" style="font-size: 0.9rem;">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Invoice ID</th>
-                                            <th>Date Issued</th>
-                                            <th>Breakdown (Consult / Lab / Med)</th>
-                                            <th>Total Amount</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="hist-bills-tbody">
-                                        <tr><td colspan="6" class="text-center text-muted">No transactions logged.</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close File</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Off-screen PDF printable containers -->
-    <!-- Invoice PDF printable container -->
+    <!-- Off-screen PDF printable container (with outer positioning wrap) -->
     <div style="position: absolute; left: -9999px; top: -9999px; overflow: hidden; width: 700px;">
         <div id="invoice-pdf-template" style="width: 100%; padding: 40px; font-family: 'Plus Jakarta Sans', sans-serif; background-color: #ffffff;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0d9488; padding-bottom: 20px; margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0284c7; padding-bottom: 20px; margin-bottom: 30px;">
                 <div>
                     <h2 style="margin: 0; color: #1e3a8a; font-weight: 700; font-size: 24px;">HOSPITAL MANAGEMENT SYSTEM</h2>
                     <p style="margin: 5px 0 0 0; color: #64748b; font-size: 13px;">123 Healthcare Boulevard, Tech City</p>
                     <p style="margin: 2px 0 0 0; color: #64748b; font-size: 13px;">Ph: +91 98765 43210 | support@hms.org</p>
                 </div>
                 <div style="text-align: right;">
-                    <h1 style="margin: 0; color: #0d9488; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">INVOICE</h1>
+                    <h1 style="margin: 0; color: #0284c7; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">INVOICE</h1>
                     <p style="margin: 5px 0 0 0; color: #475569; font-size: 14px; font-weight: 600;" id="pdf-invoice-id">INV-00</p>
                 </div>
             </div>
@@ -332,7 +345,7 @@
             <!-- Billing charges breakdown table -->
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px;">
                 <thead>
-                    <tr style="background-color: #0d9488; color: #ffffff;">
+                    <tr style="background-color: #0284c7; color: #ffffff;">
                         <th style="padding: 10px; border-radius: 4px 0 0 4px; text-align: left;">Charge Description</th>
                         <th style="padding: 10px; text-align: right; border-radius: 0 4px 4px 0;">Amount ($)</th>
                     </tr>
@@ -352,7 +365,7 @@
                     </tr>
                     <tr style="font-size: 16px; font-weight: 700; color: #0f172a; background-color: #f1f5f9;">
                         <td style="padding: 12px 10px;">TOTAL AMOUNT DUE</td>
-                        <td style="padding: 12px 10px; text-align: right; color: #0d9488;" id="pdf-charge-total">-</td>
+                        <td style="padding: 12px 10px; text-align: right; color: #0284c7;" id="pdf-charge-total">-</td>
                     </tr>
                 </tbody>
             </table>
@@ -375,7 +388,7 @@
         </div>
     </div>
 
-    <!-- Prescription PDF printable container -->
+    <!-- Off-screen Prescription PDF printable container -->
     <div style="position: absolute; left: -9999px; top: -9999px; overflow: hidden; width: 700px;">
         <div id="prescription-pdf-template" style="width: 100%; padding: 40px; font-family: 'Plus Jakarta Sans', sans-serif; background-color: #ffffff;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #10b981; padding-bottom: 20px; margin-bottom: 30px;">
@@ -456,7 +469,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="./doctor.js"></script>
-  </body>
+    <script src="./patient.js"></script>
+</body>
 </html>

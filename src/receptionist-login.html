@@ -16,13 +16,13 @@
             <form id="receptionistLoginForm" class="login-form">
                 <div class="form-group">
                     <label for="receptionist-username">Username</label>
-                    <input type="text" id="receptionist-username" placeholder="Enter your username" required>
+                    <input type="text" id="receptionist-username" placeholder="Enter your username" required autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label for="receptionist-password">Password</label>
                     <input type="password" id="receptionist-password" placeholder="Enter your password" required>
                 </div>
-                <button type="submit" class="login-submit-btn">Login</button>
+                <button type="submit" class="login-submit-btn" id="loginBtn">Login</button>
             </form>
             <div class="login-footer">
                 <a href="./index.html">Back to Home</a>
@@ -42,22 +42,39 @@
 
     <script src="./login.js"></script>
     <script>
-        // Receptionist credentials
-        const validCredentials = {
-            receptionist: { username: 'receptionist', password: 'receptionist123' }
-        };
-
-        document.getElementById('receptionistLoginForm').addEventListener('submit', function(e) {
+        document.getElementById('receptionistLoginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            const username = document.getElementById('receptionist-username').value;
+
+            const btn = document.getElementById('loginBtn');
+            btn.textContent = 'Verifying...';
+            btn.disabled = true;
+
+            const username = document.getElementById('receptionist-username').value.trim();
             const password = document.getElementById('receptionist-password').value;
-            
-            if (username === validCredentials.receptionist.username && password === validCredentials.receptionist.password) {
-                // Redirect to receptionist dashboard
-                window.location.href = './receptionist.html';
-            } else {
-                showErrorModal('Invalid username or password. Please try again.');
+
+            try {
+                const res = await fetch('/api/admin/verify-receptionist-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    // Store session info
+                    sessionStorage.setItem('hms_receptionist_auth', 'true');
+                    sessionStorage.setItem('hms_receptionist_name', data.name || username);
+                    sessionStorage.setItem('hms_receptionist_username', username);
+                    window.location.href = './receptionist.html';
+                } else {
+                    showErrorModal(data.error || 'Invalid username or password. Please try again.');
+                }
+            } catch (err) {
+                showErrorModal('Could not connect to server. Please try again.');
+            } finally {
+                btn.textContent = 'Login';
+                btn.disabled = false;
             }
         });
     </script>

@@ -21,6 +21,7 @@ window.addEventListener('click', function(e) {
 const doctorBtn = document.querySelector('.doctor-btn');
 const patientBtn = document.querySelector('.patient-btn');
 const receptionistBtn = document.querySelector('.receptionist-btn');
+const adminBtn = document.querySelector('.admin-btn');
 
 doctorBtn.addEventListener('click', function() {
     window.location.href = './doctor-login.html';
@@ -32,4 +33,8 @@ patientBtn.addEventListener('click', function() {
 
 receptionistBtn.addEventListener('click', function() {
     window.location.href = './receptionist-login.html';
+});
+
+adminBtn.addEventListener('click', function() {
+    window.location.href = './admin-login.html';
 });

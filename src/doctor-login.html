@@ -42,22 +42,33 @@
 
     <script src="./login.js"></script>
     <script>
-        // Doctor credentials
-        const validCredentials = {
-            doctor: { username: 'doctor', password: 'doctor123' }
-        };
-
-        document.getElementById('doctorLoginForm').addEventListener('submit', function(e) {
+        document.getElementById('doctorLoginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const username = document.getElementById('doctor-username').value;
+            const username = document.getElementById('doctor-username').value.trim();
             const password = document.getElementById('doctor-password').value;
             
-            if (username === validCredentials.doctor.username && password === validCredentials.doctor.password) {
-                // Redirect to doctor dashboard
-                window.location.href = './doctor.html';
-            } else {
-                showErrorModal('Invalid username or password. Please try again.');
+            try {
+                const response = await fetch('/api/admin/verify-doctor-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    sessionStorage.setItem('hms_doctor_auth', 'true');
+                    sessionStorage.setItem('hms_doctor_id', data.doctor.D_ID);
+                    sessionStorage.setItem('hms_doctor_name', `Dr. ${data.doctor.DOCTOR_FIRSTNAME} ${data.doctor.DOCTOR_LASTNAME}`);
+                    
+                    window.location.href = './doctor.html';
+                } else {
+                    showErrorModal(data.error || 'Invalid username or password. Please try again.');
+                }
+            } catch (err) {
+                console.error('Login check failed:', err);
+                showErrorModal('Network error. Failed to reach the server.');
             }
         });
     </script>
