@@ -124,7 +124,7 @@
                 <button type="button" class="btn btn-outline-light btn-sm" onclick="openChangePasswordModal()">
                     <i class="bi bi-key-fill me-1"></i> Change Password
                 </button>
-                <a href="./index.html" class="btn btn-outline-danger btn-sm">Sign Out</a>
+                <a href="#" class="btn btn-outline-danger btn-sm" onclick="signOut()">Sign Out</a>
             </div>
         </div>
     </nav>
@@ -197,9 +197,24 @@
         <div class="row">
             <div class="col-xl-6">
                 <div class="dashboard-section">
-                    <h3 class="fw-bold mb-4">Appointment Schedules</h3>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                        <h3 class="fw-bold m-0">Appointment Schedules</h3>
+                        <div class="d-flex gap-2">
+                            <input type="date" id="filter-date" class="form-control form-control-sm" style="width: 140px;" title="Filter by appointment date">
+                            <select id="filter-doctor" class="form-select form-select-sm" style="width: 160px;">
+                                <option value="">All Doctors</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
+                            <colgroup>
+                                <col style="width: 25%;">
+                                <col style="width: 25%;">
+                                <col style="width: 25%;">
+                                <col style="width: 12%;">
+                                <col style="width: 13%;">
+                            </colgroup>
                             <thead class="table-light">
                                 <tr>
                                     <th>Patient</th>
@@ -224,6 +239,13 @@
                     <h3 class="fw-bold mb-4">Patient Registry Directory</h3>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
+                            <colgroup>
+                                <col style="width: 15%;">
+                                <col style="width: 32%;">
+                                <col style="width: 18%;">
+                                <col style="width: 15%;">
+                                <col style="width: 20%;">
+                            </colgroup>
                             <thead class="table-light">
                                 <tr>
                                     <th>ID</th>

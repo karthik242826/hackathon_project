@@ -189,6 +189,9 @@
         <button class="tab-btn" onclick="switchTab('receptionists')">
             <i class="bi bi-person-badge"></i> Receptionists
         </button>
+        <button class="tab-btn" onclick="switchTab('resets')">
+            <i class="bi bi-key-fill"></i> Reset Requests
+        </button>
     </div>
 
     <!-- ══════════════ TAB: DOCTORS ══════════════ -->
@@ -310,6 +313,24 @@
         </div>
     </div>
 
+    <!-- ══════════════ TAB: RESET REQUESTS ══════════════ -->
+    <div id="tab-resets" class="tab-content">
+        <div class="content-grid" style="grid-template-columns: 1fr;">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2><i class="bi bi-key-fill me-2" style="color:#fbbf24"></i>Pending Password Reset Requests</h2>
+                        <p>Approve staff password reset requests and set new passwords</p>
+                    </div>
+                    <button class="btn-sm-action" onclick="loadResetRequests()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                </div>
+                <div id="resets-table-wrapper" class="panel-body">
+                    <div class="empty-state"><div class="spinner"></div><p style="margin-top:10px">Loading...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div><!-- /main-container -->
 
 <!-- Toast -->
@@ -333,8 +354,11 @@
 if (sessionStorage.getItem('hms_admin_auth') !== 'true') {
     window.location.href = './admin-login.html';
 }
-function doLogout(e) {
+async function doLogout(e) {
     e.preventDefault();
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (err) {}
     sessionStorage.removeItem('hms_admin_auth');
     window.location.href = './admin-login.html';
 }
@@ -344,8 +368,8 @@ let pendingDelete = { type: null, id: null, label: null };
 
 // ── TAB SWITCHING ─────────────────────────────────────────────────────────────
 function switchTab(name) {
+    const tabs = ['doctors', 'receptionists', 'resets'];
     document.querySelectorAll('.tab-btn').forEach((b,i) => {
-        const tabs = ['doctors','receptionists'];
         b.classList.toggle('active', tabs[i] === name);
     });
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -353,6 +377,7 @@ function switchTab(name) {
 
     if (name === 'doctors')       loadDoctors();
     if (name === 'receptionists') loadReceptionists();
+    if (name === 'resets')        loadResetRequests();
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
@@ -517,6 +542,86 @@ document.getElementById('createReceptForm').addEventListener('submit', async fun
     } catch { showToast('Network error.', true); }
     finally { btn.disabled = false; btn.innerHTML = `<i class="bi bi-person-badge"></i> Create Receptionist`; }
 });
+
+// ── RESET REQUESTS ────────────────────────────────────────────────────────────
+async function loadResetRequests() {
+    const w = document.getElementById('resets-table-wrapper');
+    w.innerHTML = `<div class="empty-state"><div class="spinner"></div><p style="margin-top:10px">Fetching...</p></div>`;
+    try {
+        const list = await fetch('/api/admin/pending-resets').then(r => r.json());
+        if (!list.length) {
+            w.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="bi bi-check-circle"></i></div><p style="margin-top:10px">No pending password reset requests.</p></div>`;
+            return;
+        }
+
+        w.innerHTML = `
+            <table class="reg-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Set New Password</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="resets-tbody"></tbody>
+            </table>
+        `;
+        const tbody = document.getElementById('resets-tbody');
+        list.forEach(t => {
+            const tr = document.createElement('tr');
+            tr.className = 'reg-row';
+            tr.innerHTML = `
+                <td><strong class="text-warning">@${t.USERNAME}</strong></td>
+                <td><span class="badge bg-secondary text-uppercase">${t.ROLE}</span></td>
+                <td>
+                    <input type="password" id="pass-input-${t.ID}" class="input-custom" placeholder="New Password" style="margin-bottom:0; max-width:240px; padding:6px 12px; font-size:13px;">
+                </td>
+                <td>
+                    <button class="btn-sm-action" style="border-color:#10b981; color:#34d399;" onclick="approveReset(${t.ID}, '${t.USERNAME}')">
+                        <i class="bi bi-shield-check"></i> Approve & Reset
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch {
+        w.innerHTML = `<div class="empty-state"><div class="empty-icon" style="color:#f87171"><i class="bi bi-exclamation-triangle"></i></div><p style="color:#f87171">Failed to load reset requests.</p></div>`;
+    }
+}
+
+async function approveReset(ticketId, username) {
+    const pwdInput = document.getElementById(`pass-input-${ticketId}`);
+    const password = pwdInput.value;
+    if (!password) {
+        showToast('Please enter a new password.', true);
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/admin/approve-reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ticketId, approvedPassword: password })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast(`Password updated successfully for @${username}.`);
+            loadResetRequests();
+        } else {
+            showToast(data.error || 'Failed to approve reset.', true);
+        }
+    } catch {
+        showToast('Network error.', true);
+    }
+}
+
+// ── LOGOUT ─────────────────────────────────────────────────────────────────────
+async function doLogout(e) {
+    e.preventDefault();
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch(err) {}
+    window.location.href = './admin-login.html';
+}
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 loadStats();

@@ -112,10 +112,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `<span class="badge-paid">Paid</span>` 
                 : `<span class="badge-pending">Pending</span>`;
 
-            // UPI Pay button — shown only for PENDING bills
+            // Settle / Mark Paid button — shown only for PENDING bills
             const payBtn = bill.PAYMENT_STATUS !== 'PAID'
-                ? `<button class="btn-upi-pay" id="upi-btn-${bill.BILL_ID}" onclick="initiatePayment(${bill.BILL_ID}, ${bill.TOTAL_AMOUNT}, '${bill.PATIENT_FIRSTNAME} ${bill.PATIENT_LASTNAME}')">
-                      <i class="bi bi-phone-fill"></i> Pay via UPI
+                ? `<button class="btn-mark-paid" id="settle-btn-${bill.BILL_ID}" onclick="markBillAsPaid(${bill.BILL_ID}, ${bill.TOTAL_AMOUNT})">
+                      <i class="bi bi-check-lg"></i> Settle Bill
                    </button>`
                 : `<span class="text-success fw-semibold" style="font-size:0.8rem;"><i class="bi bi-check-circle-fill"></i> Settled</span>`;
             
@@ -133,6 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                     <button class="btn btn-sm btn-outline-secondary" style="font-size: 0.85rem;" onclick="printInvoiceAlternative(${bill.BILL_ID})">
                         <i class="bi bi-printer-fill"></i> Print
+                    </button>
+                    <button class="btn btn-sm btn-outline-success ms-1" style="font-size: 0.85rem;" onclick="sendPrescriptionEmail(${bill.BILL_ID})" title="Email prescription to patient">
+                        <i class="bi bi-envelope-fill"></i> Email
                     </button>
                 </td>
             `;
@@ -478,7 +481,7 @@ window.printInvoiceAlternative = async function(billId) {
 };
 
 // ============================================================
-// Razorpay UPI Payment Flow
+// Direct Bill Settlement Flow
 // ============================================================
 
 // Inject payment success toast once
@@ -497,95 +500,77 @@ function showPaymentToast(msg) {
     setTimeout(() => toast.classList.remove('show'), 4000);
 }
 
-async function initiatePayment(billId, amount, patientName) {
-    const btn = document.getElementById(`upi-btn-${billId}`);
-    if (btn) { btn.disabled = true; btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Opening...`; }
+async function markBillAsPaid(billId, amount) {
+    const btn = document.getElementById(`settle-btn-${billId}`);
+    
+    // Prompt receptionist/admin to pick the payment method used
+    const method = prompt(`Select Payment Method for INV-${billId} (Amount: ₹${amount.toFixed(2)}):\nType CASH, CARD, UPI, or INSURANCE`, "CASH");
+    if (method === null) return; // cancelled
+    
+    const cleanMethod = method.toUpperCase().trim();
+    if (!['CASH', 'CARD', 'UPI', 'INSURANCE'].includes(cleanMethod)) {
+        alert('Invalid payment method. Settle cancelled.');
+        return;
+    }
+
+    if (btn) { 
+        btn.disabled = true; 
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Settling...`; 
+    }
 
     try {
-        // Step 1: Get Razorpay config (key_id) from server
-        const configRes = await fetch('/api/payment/config');
-        const config = await configRes.json();
-
-        if (!config.configured) {
-            alert('⚠️ Razorpay is not configured yet.\n\nPlease add your RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to the .env file and restart the server.\n\nGet keys at: https://razorpay.com → Settings → API Keys');
-            if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-phone-fill"></i> Pay via UPI`; }
-            return;
-        }
-
-        // Step 2: Create Razorpay order on backend
-        const orderRes = await fetch('/api/payment/create-order', {
+        const response = await fetch(`/api/bills/${billId}/mark-paid`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ billId, amount, currency: 'INR' })
+            body: JSON.stringify({ paymentMethod: cleanMethod })
         });
-        const orderData = await orderRes.json();
+        const data = await response.json();
 
-        if (!orderRes.ok || !orderData.success) {
-            alert('Failed to create payment order: ' + (orderData.error || 'Unknown error'));
-            if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-phone-fill"></i> Pay via UPI`; }
-            return;
-        }
-
-        // Step 3: Open Razorpay checkout popup
-        const options = {
-            key: config.keyId,
-            amount: orderData.order.amount,
-            currency: 'INR',
-            name: 'HMS Hospital',
-            description: `Invoice INV-${billId}`,
-            image: './hearth-beat-line-icon-health-medical-heartbeat-symbol-isolated-white-background-hospital-logo-vector-illustration-209787695-removebg-preview.png',
-            order_id: orderData.order.id,
-            handler: async function(response) {
-                // Step 4: Verify payment signature on backend & update DB
-                try {
-                    const verifyRes = await fetch('/api/payment/verify', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            razorpay_order_id:   response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature:  response.razorpay_signature,
-                            billId
-                        })
-                    });
-                    const verifyData = await verifyRes.json();
-                    if (verifyRes.ok && verifyData.success) {
-                        showPaymentToast(`✅ INV-${billId} Paid — ₹${amount.toFixed(2)} via UPI`);
-                        // Reload billing dashboard to reflect PAID status
-                        setTimeout(() => window.location.reload(), 1500);
-                    } else {
-                        alert('Payment received but verification failed: ' + (verifyData.error || 'Unknown error'));
-                    }
-                } catch (verifyErr) {
-                    alert('Network error during payment verification.');
-                }
-            },
-            prefill: {
-                name: patientName,
-                email: '',
-                contact: ''
-            },
-            theme: {
-                color: '#7c3aed'
-            },
-            modal: {
-                ondismiss: function() {
-                    if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-phone-fill"></i> Pay via UPI`; }
-                }
+        if (response.ok && data.success) {
+            showPaymentToast(`✅ INV-${billId} Paid — ₹${amount.toFixed(2)} via ${cleanMethod}`);
+            // Reload billing dashboard to reflect PAID status
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            alert(data.error || 'Failed to settle payment.');
+            if (btn) { 
+                btn.disabled = false; 
+                btn.innerHTML = `<i class="bi bi-check-lg"></i> Settle Bill`; 
             }
-        };
-
-        const rzp = new Razorpay(options);
-        rzp.on('payment.failed', function(response) {
-            alert(`Payment failed: ${response.error.description}`);
-            if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-phone-fill"></i> Pay via UPI`; }
-        });
-        rzp.open();
-
+        }
     } catch (err) {
-        console.error('Payment initiation error:', err);
-        alert('Payment initiation failed. Check console for details.');
-        if (btn) { btn.disabled = false; btn.innerHTML = `<i class="bi bi-phone-fill"></i> Pay via UPI`; }
+        console.error('Error during bill settlement:', err);
+        alert('Network error. Failed to reach the server.');
+        if (btn) { 
+            btn.disabled = false; 
+            btn.innerHTML = `<i class="bi bi-check-lg"></i> Settle Bill`; 
+        }
     }
 }
 
+// Send prescription+invoice email to patient
+window.sendPrescriptionEmail = async function(billId) {
+    const btn = event.currentTarget;
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    try {
+        const response = await fetch(`/api/bills/${billId}/send-prescription-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            showPaymentToast(`📧 Prescription emailed! ${data.message}`);
+        } else {
+            alert(data.error || 'Failed to send prescription email.');
+        }
+    } catch (err) {
+        console.error('Email send error:', err);
+        alert('Network error sending email.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+};

@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         :root {
             --primary: #0d9488;
@@ -111,9 +110,9 @@
             font-weight: 600;
         }
 
-        /* UPI Pay Button */
-        .btn-upi-pay {
-            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        /* Settle Bill / Mark Paid Button */
+        .btn-mark-paid {
+            background: linear-gradient(135deg, #0d9488, #0f766e);
             color: white;
             border: none;
             border-radius: 8px;
@@ -127,12 +126,12 @@
             transition: all 0.2s ease;
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
-        .btn-upi-pay:hover {
-            background: linear-gradient(135deg, #6d28d9, #4338ca);
+        .btn-mark-paid:hover {
+            background: linear-gradient(135deg, #0f766e, #115e59);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
         }
-        .btn-upi-pay:disabled {
+        .btn-mark-paid:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;

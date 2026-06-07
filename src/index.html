@@ -3,202 +3,677 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="./style.css">
-    
-    
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous"/>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
-     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <title>HMS Hospital — Advanced Healthcare Management</title>
+    <meta name="description" content="HMS Hospital — World-class healthcare with state-of-the-art facilities. Book appointments, access records, and experience premium medical care.">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --emerald: #10b981;
+            --emerald-dark: #059669;
+            --bg: #030712;
+            --surface: #0f172a;
+            --surface2: #1e293b;
+            --border: rgba(255,255,255,0.07);
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --radius: 16px;
+        }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
+            background: rgba(3, 7, 18, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 40px; height: 68px;
+            display: flex; align-items: center; justify-content: space-between;
+            transition: all 0.3s;
+        }
+        .navbar.scrolled { background: rgba(15, 23, 42, 0.98); }
+        .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .nav-logo-box {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, #0284c7, #10b981);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .nav-brand-text { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+        .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
+        .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--text); }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .btn-nav-login {
+            background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+            color: var(--text); padding: 8px 18px; border-radius: 8px;
+            font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+            transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-nav-login:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+        .btn-nav-book {
+            background: linear-gradient(135deg, #0284c7, #10b981);
+            color: white; padding: 9px 20px; border-radius: 8px;
+            font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+            transition: all 0.2s; text-decoration: none; border: none;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-nav-book:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(2,132,199,0.35); color: white; }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 140px 40px 80px;
+            position: relative; overflow: hidden;
+        }
+        .hero-glow {
+            position: absolute; border-radius: 50%; filter: blur(120px); pointer-events: none;
+        }
+        .hero-glow-1 { width: 600px; height: 600px; background: rgba(2,132,199,0.12); top: -100px; left: -100px; }
+        .hero-glow-2 { width: 500px; height: 500px; background: rgba(16,185,129,0.10); bottom: -80px; right: -80px; }
+        .hero-glow-3 { width: 300px; height: 300px; background: rgba(124,58,237,0.08); top: 40%; left: 40%; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25);
+            color: #34d399; padding: 6px 16px; border-radius: 50px;
+            font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 28px; animation: fadeSlideUp 0.6s ease both;
+        }
+        .hero-badge .pulse {
+            width: 7px; height: 7px; background: #10b981; border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.4)} }
+
+        .hero-title {
+            font-size: clamp(42px, 6vw, 80px); font-weight: 900;
+            line-height: 1.08; letter-spacing: -2px;
+            animation: fadeSlideUp 0.7s ease 0.1s both;
+        }
+        .hero-title .gradient-text {
+            background: linear-gradient(135deg, #38bdf8, #10b981, #818cf8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-sub {
+            font-size: 17px; color: var(--muted); line-height: 1.7;
+            max-width: 580px; margin: 24px auto 0;
+            animation: fadeSlideUp 0.7s ease 0.2s both;
+        }
+
+        /* ── APPOINTMENT BOOKING PANEL ── */
+        .appt-panel {
+            background: rgba(15,23,42,0.8); backdrop-filter: blur(20px);
+            border: 1px solid var(--border); border-radius: 24px;
+            padding: 36px; max-width: 720px; margin: 50px auto 0;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+            animation: fadeSlideUp 0.8s ease 0.3s both;
+        }
+        .appt-panel-title {
+            font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 8px;
+        }
+        .appt-panel-sub {
+            font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 28px;
+        }
+        .appt-options { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .appt-card {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+            border-radius: 16px; padding: 28px 24px; text-align: center;
+            cursor: pointer; transition: all 0.25s; text-decoration: none; display: block;
+            position: relative; overflow: hidden;
+        }
+        .appt-card::before {
+            content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.25s;
+        }
+        .appt-card.new-patient::before { background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02)); }
+        .appt-card.existing-patient::before { background: linear-gradient(135deg, rgba(2,132,199,0.08), rgba(2,132,199,0.02)); }
+        .appt-card:hover::before { opacity: 1; }
+        .appt-card.new-patient:hover { border-color: rgba(16,185,129,0.4); box-shadow: 0 8px 32px rgba(16,185,129,0.15); transform: translateY(-3px); }
+        .appt-card.existing-patient:hover { border-color: rgba(2,132,199,0.4); box-shadow: 0 8px 32px rgba(2,132,199,0.15); transform: translateY(-3px); }
+        .appt-icon {
+            width: 60px; height: 60px; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; margin: 0 auto 16px;
+        }
+        .appt-card.new-patient .appt-icon { background: rgba(16,185,129,0.12); }
+        .appt-card.existing-patient .appt-icon { background: rgba(2,132,199,0.12); }
+        .appt-card-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+        .appt-card.new-patient .appt-card-title { color: #34d399; }
+        .appt-card.existing-patient .appt-card-title { color: #38bdf8; }
+        .appt-card-desc { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+        .appt-card-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 700;
+            font-family: inherit; cursor: pointer; border: none; width: 100%; justify-content: center;
+            transition: all 0.2s;
+        }
+        .appt-card.new-patient .appt-card-btn { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .appt-card.new-patient .appt-card-btn:hover { box-shadow: 0 6px 20px rgba(16,185,129,0.4); transform: translateY(-1px); }
+        .appt-card.existing-patient .appt-card-btn { background: linear-gradient(135deg, #0284c7, #0369a1); color: white; }
+        .appt-card.existing-patient .appt-card-btn:hover { box-shadow: 0 6px 20px rgba(2,132,199,0.4); transform: translateY(-1px); }
+        .appt-divider { text-align: center; color: var(--muted); font-size: 12px; margin-top: 20px; }
+        .appt-divider a { color: var(--muted); text-decoration: underline; cursor: pointer; }
+        .appt-divider a:hover { color: var(--text); }
+
+        @keyframes fadeSlideUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+
+        /* ── STATS ── */
+        .stats-section { padding: 80px 40px; position: relative; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; max-width: 1100px; margin: 0 auto; }
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 28px; text-align: center; transition: all 0.3s;
+        }
+        .stat-card:hover { border-color: rgba(2,132,199,0.3); transform: translateY(-4px); }
+        .stat-icon { font-size: 32px; margin-bottom: 14px; }
+        .stat-value { font-size: 40px; font-weight: 900; letter-spacing: -2px; }
+        .stat-value.blue { background: linear-gradient(135deg,#38bdf8,#0284c7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .stat-value.green { background: linear-gradient(135deg,#34d399,#10b981); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .stat-value.purple { background: linear-gradient(135deg,#a78bfa,#7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .stat-value.rose { background: linear-gradient(135deg,#fb7185,#e11d48); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .stat-label { font-size: 13px; color: var(--muted); margin-top: 6px; font-weight: 500; }
+
+        /* ── SECTION HEADER ── */
+        .section-header { text-align: center; margin-bottom: 56px; }
+        .section-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(2,132,199,0.1); border: 1px solid rgba(2,132,199,0.2);
+            color: #38bdf8; padding: 5px 14px; border-radius: 50px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+        .section-title { font-size: clamp(28px,4vw,42px); font-weight: 900; letter-spacing: -1px; }
+        .section-sub { font-size: 15px; color: var(--muted); margin-top: 12px; max-width: 520px; margin-left: auto; margin-right: auto; }
+
+        /* ── SERVICES ── */
+        .services-section { padding: 80px 40px; background: rgba(15,23,42,0.5); }
+        .services-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; max-width: 1200px; margin: 0 auto; }
+        .service-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 24px 20px; text-align: center; transition: all 0.3s; cursor: pointer;
+        }
+        .service-card:hover { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.05); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(16,185,129,0.1); }
+        .service-emoji { font-size: 36px; margin-bottom: 12px; display: block; }
+        .service-name { font-size: 14px; font-weight: 700; color: var(--text); }
+
+        /* ── ABOUT ── */
+        .about-section { padding: 100px 40px; max-width: 1200px; margin: 0 auto; }
+        .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+        .about-image-wrap {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+            overflow: hidden; height: 420px; position: relative;
+        }
+        .about-image-wrap img { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }
+        .about-image-overlay {
+            position: absolute; bottom: 24px; left: 24px; right: 24px;
+            background: rgba(15,23,42,0.85); backdrop-filter: blur(12px);
+            border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .about-tag { display: inline-block; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399; padding: 4px 12px; border-radius: 50px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 18px; }
+        .about-heading { font-size: 36px; font-weight: 900; letter-spacing: -1px; line-height: 1.15; margin-bottom: 18px; }
+        .about-text { color: var(--muted); font-size: 15px; line-height: 1.75; margin-bottom: 14px; }
+        .about-features { list-style: none; margin-top: 24px; }
+        .about-features li { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+        .about-features li::before { content: '✓'; color: #10b981; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+
+        /* ── CONTACT ── */
+        .contact-section { padding: 80px 40px; background: var(--surface); }
+        .contact-inner { max-width: 1000px; margin: 0 auto; }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 48px; }
+        .contact-card {
+            background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 28px 24px; text-align: center; transition: all 0.3s;
+        }
+        .contact-card:hover { border-color: rgba(2,132,199,0.3); transform: translateY(-3px); }
+        .contact-card-icon { font-size: 28px; margin-bottom: 12px; }
+        .contact-card-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .contact-card-value { font-size: 15px; font-weight: 700; color: var(--text); }
+        .social-row { display: flex; justify-content: center; gap: 16px; margin-top: 44px; }
+        .social-btn {
+            width: 46px; height: 46px; border-radius: 12px;
+            background: var(--surface2); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: var(--muted); transition: all 0.2s; text-decoration: none;
+        }
+        .social-btn:hover { background: rgba(2,132,199,0.1); border-color: rgba(2,132,199,0.3); color: #38bdf8; transform: translateY(-2px); }
+
+        /* ── FOOTER ── */
+        .footer {
+            background: var(--bg); border-top: 1px solid var(--border);
+            padding: 28px 40px; text-align: center;
+            color: var(--muted); font-size: 13px;
+        }
+
+        /* ── LOGIN MODAL ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        .modal-box {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+            padding: 40px; width: 90%; max-width: 940px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+        .modal-title { font-size: 22px; font-weight: 800; }
+        .modal-close { width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--muted); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .modal-close:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+        .modal-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+        .role-card {
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px;
+            padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.25s;
+            position: relative; overflow: hidden;
+        }
+        .role-card:hover { transform: translateY(-4px); }
+        .role-card.doctor-card:hover { border-color: rgba(56,189,248,0.4); background: rgba(56,189,248,0.05); }
+        .role-card.patient-card:hover { border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.05); }
+        .role-card.recep-card:hover { border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.05); }
+        .role-card.admin-card:hover { border-color: rgba(167,139,250,0.4); background: rgba(167,139,250,0.05); }
+        .role-icon-wrap { width: 64px; height: 64px; border-radius: 18px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        .doctor-card .role-icon-wrap { background: rgba(56,189,248,0.1); }
+        .patient-card .role-icon-wrap { background: rgba(52,211,153,0.1); }
+        .recep-card .role-icon-wrap { background: rgba(251,191,36,0.1); }
+        .admin-card .role-icon-wrap { background: rgba(167,139,250,0.1); }
+        .role-name { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+        .doctor-card .role-name { color: #38bdf8; }
+        .patient-card .role-name { color: #34d399; }
+        .recep-card .role-name { color: #fbbf24; }
+        .admin-card .role-name { color: #a78bfa; }
+        .role-desc { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+        .role-btn {
+            width: 100%; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700;
+            font-family: inherit; cursor: pointer; border: none; transition: all 0.2s;
+        }
+        .doctor-card .role-btn { background: rgba(56,189,248,0.15); color: #38bdf8; }
+        .doctor-card .role-btn:hover { background: rgba(56,189,248,0.25); }
+        .patient-card .role-btn { background: rgba(52,211,153,0.15); color: #34d399; }
+        .patient-card .role-btn:hover { background: rgba(52,211,153,0.25); }
+        .recep-card .role-btn { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .recep-card .role-btn:hover { background: rgba(251,191,36,0.25); }
+        .admin-card .role-btn { background: rgba(167,139,250,0.15); color: #a78bfa; }
+        .admin-card .role-btn:hover { background: rgba(167,139,250,0.25); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+            .appt-options, .modal-grid { grid-template-columns: 1fr 1fr; }
+            .services-grid { grid-template-columns: repeat(3,1fr); }
+            .stats-grid { grid-template-columns: repeat(2,1fr); }
+            .about-grid, .contact-grid { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+        }
+        @media (max-width: 600px) {
+            .appt-options, .modal-grid { grid-template-columns: 1fr; }
+            .services-grid { grid-template-columns: repeat(2,1fr); }
+            .stats-grid { grid-template-columns: repeat(2,1fr); }
+            .navbar { padding: 0 20px; }
+            .hero { padding: 120px 20px 60px; }
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo"><img src="./hearth-beat-line-icon-health-medical-heartbeat-symbol-isolated-white-background-hospital-logo-vector-illustration-209787695-removebg-preview.png" class = "hospital-logo"></div>
-        <ul class="nav-links">
-            <li><a href="#carouselExampleControls">Home</a></li>
-            <li><a href="#about-section">About</a></li>
-            <li><a href="#services-section">Services</a></li>
-            <li><a href="#contact-section">Contact</a></li>
-        </ul>
-        <div><a href="#" id="loginBtn" class="btn btn-primary">Login</a></div>
-    </nav>
 
-
-
-    <div id="carouselExampleControls" class="carousel slide" data-ride="carousel">
-        <div class="carousel-inner">
-            <div class="carousel-item active ">
-            <img class="d-block w-100 slides" src="./slide1.jpg" alt="First slide">
-            </div>
-            <div class="carousel-item">
-            <img class="d-block w-100 slides" src="./slide2.jpg" alt="Second slide">
-            </div>
-            <div class="carousel-item">
-            <img class="d-block w-100 slides" src="./slide3.jpg" alt="Third slide">
-            </div>
-        </div>
-        <a class="carousel-control-prev" href="#carouselExampleControls" role="button" data-slide="prev">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="sr-only">Previous</span>
-        </a>
-        <a class="carousel-control-next" href="#carouselExampleControls" role="button" data-slide="next">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="sr-only">Next</span>
-        </a>
+<!-- ══════════════ NAVBAR ══════════════ -->
+<nav class="navbar" id="mainNav">
+    <a href="#hero" class="nav-brand">
+        <div class="nav-logo-box">🏥</div>
+        <span class="nav-brand-text">HMS Hospital</span>
+    </a>
+    <ul class="nav-links">
+        <li><a href="#hero">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+        <a class="btn-nav-login" href="#" id="loginBtn"><i class="bi bi-box-arrow-in-right"></i> Staff Login</a>
+        <a class="btn-nav-book" href="#book-appointment"><i class="bi bi-calendar-plus"></i> Book Now</a>
     </div>
+</nav>
 
-
-
-    <div id="about-section" class="doctors-section">
-        <div class="about-description">
-            <div>
-                <h1 class="about-des-heading">What we do</h1>
-                <p>Our Hospital is a specialised provider of diagnostic and healthcare services, focusing on markets mainly in Central and Eastern Europe and has recently entered India. The company operates through two divisions – Diagnostic Services and Healthcare Services.</p>
-            </div>
-            <div>
-                <img src="./img2.jpg" class="doctors-image">
-            </div>
+<!-- ══════════════ HERO ══════════════ -->
+<section class="hero" id="hero">
+    <div class="hero-glow hero-glow-1"></div>
+    <div class="hero-glow hero-glow-2"></div>
+    <div class="hero-glow hero-glow-3"></div>
+    <div style="position:relative;z-index:2;width:100%;">
+        <div class="hero-badge">
+            <span class="pulse"></span>
+            NABL Accredited &bull; ISO 9001:2015 Certified
         </div>
-        <div class="about-description">
-            <div>
-                <img src="./img2.jpg" class="doctors-image">
-            </div>
-            <div>
-                <h1 class="about-des-heading">What we offer</h1>
-                <p>We offer a wide range of medical services and treatments, including diagnostic tests, specialized therapies, and comprehensive care for various health conditions.</p>
-            </div>
-        </div>
-    </div>
+        <h1 class="hero-title">
+            Advanced Healthcare<br>
+            <span class="gradient-text">Designed for You</span>
+        </h1>
+        <p class="hero-sub">
+            World-class medical expertise combined with compassionate care. 
+            From preventive care to complex surgeries — your health is our mission.
+        </p>
 
-
-
-    <div id="services-section"  class="container">
-        <h1>Center of Excellence</h1>
-        <div class="grid-container">
-            <div class="card">
-                <div class="icon">🫀</div>
-                <span>Cardiology</span>
-            </div>
-            <div class="card">
-                <div class="icon">🫁</div>
-                <span>Cardiothoracic</span>
-            </div>
-            <div class="card">
-                <div class="icon">🧠</div>
-                <span>Neuro Sciences</span>
-            </div>
-            <div class="card">
-                <div class="icon">🧪</div>
-                <span>Gastroenterology</span>
-            </div>
-            <div class="card">
-                <div class="icon">🩸</div>
-                <span>Nephrology</span>
-            </div>
-            <div class="card">
-                <div class="icon">🎗️</div>
-                <span>Oncology</span>
-            </div>
-            <div class="card">
-                <div class="icon">🚑</div>
-                <span>Emergency & Critical Care</span>
-            </div>
-            <div class="card">
-                <div class="icon">🧬</div>
-                <span>Urology</span>
-            </div>
-            <div class="card">
-                <div class="icon">🧴</div>
-                <span>Dermatology</span>
-            </div>
-            <div class="card">
-                <div class="icon">🏥</div>
-                <span>General Surgery</span>
-            </div>
-            <div class="card">
-                <div class="icon">👩‍⚕️</div>
-                <span>Gynaecology</span>
-            </div>
-            <div class="card">
-                <div class="icon">👶</div>
-                <span>Child Care</span>
-            </div>
-            <div class="card">
-                <div class="icon">🦴</div>
-                <span>Orthopaedics</span>
-            </div>
-            <div class="card">
-                <div class="icon">🫀</div>
-                <span>Organ Transplant</span>
-            </div>
-            <div class="card">
-                <div class="icon">💇</div>
-                <span>Plastic Surgery</span>
-            </div>
-            <div class="card">
-                <div class="icon">🔧</div>
-                <span>Robotic Surgery</span>
-            </div>
-        </div>
-
-        <button class="view-more">View More</button>
-    </div>
-
-
-
-
-    <div id="contact-section">
-        <h1 style="text-align: center;">Contact Us</h1>
-        <p style="text-align: center;">For inquiries, appointments, or any questions, please contact us:</p>
-        
-        <div class="contact-icon-container">
-            <i class="bi bi-youtube contact-icon"></i>
-            <i class="bi bi-envelope contact-icon"></i>
-            <i class="bi bi-instagram contact-icon"></i>
-            <i class="bi bi-facebook contact-icon"></i>
-            <i class="bi bi-twitter-x contact-icon"></i>
-        </div>
-    </div>
-
-
-
-
-    <div id="loginModal" class="login-modal">
-        <div class="login-modal-content">
-            <span class="close-btn">&times;</span>
-            <h2>Select Login Type</h2>
-            <div class="login-options">
-                <div class="login-card">
-                    <div class="login-icon">👨‍⚕️</div>
-                    <h3>Doctor</h3>
-                    <p>Login as a healthcare professional</p>
-                    <button class="login-btn doctor-btn">Login</button>
+        <!-- ── APPOINTMENT BOOKING PANEL ── -->
+        <div class="appt-panel" id="book-appointment">
+            <h2 class="appt-panel-title">📅 Book an Appointment</h2>
+            <p class="appt-panel-sub">Choose your patient type to get started</p>
+            <div class="appt-options">
+                <div class="appt-card new-patient" onclick="showNewPatientInfo()" style="cursor:pointer;">
+                    <div class="appt-icon">🆕</div>
+                    <div class="appt-card-title">New Patient</div>
+                    <p class="appt-card-desc">
+                        First time here? Visit our reception desk — our receptionist will register you and schedule your first appointment.
+                    </p>
+                    <button class="appt-card-btn" type="button">
+                        <i class="bi bi-person-plus-fill"></i>
+                        Register & Book
+                    </button>
                 </div>
-                <div class="login-card">
-                    <div class="login-icon">👤</div>
-                    <h3>Patient</h3>
-                    <p>Login as a patient</p>
-                    <button class="login-btn patient-btn">Login</button>
-                </div>
-                <div class="login-card">
-                    <div class="login-icon">📋</div>
-                    <h3>Receptionist</h3>
-                    <p>Login as a receptionist</p>
-                    <button class="login-btn receptionist-btn">Login</button>
-                </div>
-                <div class="login-card admin-login-card">
-                    <div class="login-icon">🛡️</div>
-                    <h3>Admin</h3>
-                    <p>System administrator access</p>
-                    <button class="login-btn admin-btn">Login</button>
+                <a class="appt-card existing-patient" href="./patient-login.html" id="existingPatientBtn">
+                    <div class="appt-icon">🔄</div>
+                    <div class="appt-card-title">Existing Patient</div>
+                    <p class="appt-card-desc">
+                        Returning patient? Log in to view your records, prescriptions, and book a follow-up appointment.
+                    </p>
+                    <button class="appt-card-btn">
+                        <i class="bi bi-calendar2-check-fill"></i>
+                        Login & Book
+                    </button>
+                </a>
+            </div>
+            <p class="appt-divider" style="margin-top:22px;">
+                Are you a doctor or staff member? 
+                <a href="#" id="loginFromPanelBtn">Access the staff portal →</a>
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ STATS ══════════════ -->
+<section class="stats-section">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👨‍⚕️</div>
+            <div class="stat-value blue" data-target="120">0</div>
+            <div class="stat-label">Specialist Doctors</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🏥</div>
+            <div class="stat-value green" data-target="50000">0</div>
+            <div class="stat-label">Patients Served</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🔬</div>
+            <div class="stat-value purple" data-target="25">0</div>
+            <div class="stat-label">Specializations</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-value rose" data-target="98">0</div>
+            <div class="stat-label">Patient Satisfaction %</div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ SERVICES ══════════════ -->
+<section class="services-section" id="services">
+    <div class="section-header">
+        <div class="section-tag"><i class="bi bi-heart-pulse-fill"></i> Centers of Excellence</div>
+        <h2 class="section-title">World-Class Medical Specialties</h2>
+        <p class="section-sub">Comprehensive care across all major medical disciplines with cutting-edge technology</p>
+    </div>
+    <div class="services-grid">
+        <div class="service-card"><span class="service-emoji">🫀</span><div class="service-name">Cardiology</div></div>
+        <div class="service-card"><span class="service-emoji">🫁</span><div class="service-name">Cardiothoracic</div></div>
+        <div class="service-card"><span class="service-emoji">🧠</span><div class="service-name">Neurosciences</div></div>
+        <div class="service-card"><span class="service-emoji">🧪</span><div class="service-name">Gastroenterology</div></div>
+        <div class="service-card"><span class="service-emoji">🩸</span><div class="service-name">Nephrology</div></div>
+        <div class="service-card"><span class="service-emoji">🎗️</span><div class="service-name">Oncology</div></div>
+        <div class="service-card"><span class="service-emoji">🚑</span><div class="service-name">Emergency & Critical Care</div></div>
+        <div class="service-card"><span class="service-emoji">🧬</span><div class="service-name">Urology</div></div>
+        <div class="service-card"><span class="service-emoji">🧴</span><div class="service-name">Dermatology</div></div>
+        <div class="service-card"><span class="service-emoji">🏥</span><div class="service-name">General Surgery</div></div>
+        <div class="service-card"><span class="service-emoji">👩‍⚕️</span><div class="service-name">Gynaecology</div></div>
+        <div class="service-card"><span class="service-emoji">👶</span><div class="service-name">Paediatrics & Child Care</div></div>
+        <div class="service-card"><span class="service-emoji">🦴</span><div class="service-name">Orthopaedics</div></div>
+        <div class="service-card"><span class="service-emoji">🦷</span><div class="service-name">Dentistry</div></div>
+        <div class="service-card"><span class="service-emoji">👁️</span><div class="service-name">Ophthalmology</div></div>
+        <div class="service-card"><span class="service-emoji">🔧</span><div class="service-name">Robotic Surgery</div></div>
+    </div>
+</section>
+
+<!-- ══════════════ ABOUT ══════════════ -->
+<section id="about">
+<div class="about-section">
+    <div class="about-grid">
+        <div>
+            <div class="about-image-wrap">
+                <img src="./img2.jpg" alt="HMS Hospital facility" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#0f172a,#1e293b)'">
+                <div class="about-image-overlay">
+                    <div style="width:40px;height:40px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">🏆</div>
+                    <div>
+                        <div style="font-size:13px;font-weight:800;color:#f1f5f9;">NABH Accredited</div>
+                        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">National Healthcare Excellence Award 2024</div>
+                    </div>
                 </div>
             </div>
         </div>
+        <div>
+            <div class="about-tag">About Us</div>
+            <h2 class="about-heading">Trusted by Thousands.<br>Built on Compassion.</h2>
+            <p class="about-text">
+                HMS Hospital is a leading multi-specialty healthcare institution committed to delivering exceptional patient care through innovation, expertise, and compassion.
+            </p>
+            <p class="about-text">
+                Our state-of-the-art facilities, combined with a team of over 120 specialist doctors, ensure that every patient receives world-class diagnosis and treatment.
+            </p>
+            <ul class="about-features">
+                <li>Advanced diagnostic imaging & lab services</li>
+                <li>24/7 emergency & trauma care</li>
+                <li>Minimally invasive robotic surgery</li>
+                <li>Comprehensive outpatient & inpatient care</li>
+                <li>Digital health records & prescription management</li>
+            </ul>
+        </div>
     </div>
+</div>
+</section>
 
-    <script src="./index.js"></script>
+<!-- ══════════════ CONTACT ══════════════ -->
+<section class="contact-section" id="contact">
+    <div class="contact-inner">
+        <div class="section-header">
+            <div class="section-tag"><i class="bi bi-telephone-fill"></i> Get in Touch</div>
+            <h2 class="section-title">Contact & Support</h2>
+            <p class="section-sub">We're available 24/7 for emergencies and appointment inquiries</p>
+        </div>
+        <div class="contact-grid">
+            <div class="contact-card">
+                <div class="contact-card-icon">📞</div>
+                <div class="contact-card-label">Emergency Hotline</div>
+                <div class="contact-card-value">+91 98765 43210</div>
+            </div>
+            <div class="contact-card">
+                <div class="contact-card-icon">📧</div>
+                <div class="contact-card-label">Email Support</div>
+                <div class="contact-card-value">support@hms.org</div>
+            </div>
+            <div class="contact-card">
+                <div class="contact-card-icon">📍</div>
+                <div class="contact-card-label">Location</div>
+                <div class="contact-card-value">123 Healthcare Blvd, Tech City</div>
+            </div>
+        </div>
+        <div class="social-row">
+            <a class="social-btn" href="#" title="YouTube"><i class="bi bi-youtube"></i></a>
+            <a class="social-btn" href="#" title="Instagram"><i class="bi bi-instagram"></i></a>
+            <a class="social-btn" href="#" title="Facebook"><i class="bi bi-facebook"></i></a>
+            <a class="social-btn" href="#" title="Twitter/X"><i class="bi bi-twitter-x"></i></a>
+            <a class="social-btn" href="mailto:support@hms.org" title="Email"><i class="bi bi-envelope-fill"></i></a>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer class="footer">
+    <p>© 2026 HMS Hospital Management System &bull; All rights reserved &bull; 
+       <a href="#" style="color:#64748b;text-decoration:none;">Privacy Policy</a> &bull; 
+       <a href="#" style="color:#64748b;text-decoration:none;">Terms of Service</a>
+    </p>
+</footer>
+
+<!-- ══════════════ STAFF LOGIN MODAL ══════════════ -->
+<div class="modal-overlay" id="loginModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2 class="modal-title">🔐 Staff Portal Access</h2>
+            <button class="modal-close" id="closeModal">✕</button>
+        </div>
+        <div class="modal-grid">
+            <div class="role-card doctor-card" id="doctorCard">
+                <div class="role-icon-wrap">👨‍⚕️</div>
+                <div class="role-name">Doctor</div>
+                <p class="role-desc">Access patient appointments, write prescriptions, and manage medical records.</p>
+                <button class="role-btn" onclick="window.location.href='./doctor-login.html'">Login as Doctor</button>
+            </div>
+            <div class="role-card recep-card" id="recepCard">
+                <div class="role-icon-wrap">📋</div>
+                <div class="role-name">Receptionist</div>
+                <p class="role-desc">Manage appointments, register patients, handle billing and invoices.</p>
+                <button class="role-btn" onclick="window.location.href='./receptionist-login.html'">Login as Receptionist</button>
+            </div>
+            <div class="role-card patient-card" id="patientCard">
+                <div class="role-icon-wrap">👤</div>
+                <div class="role-name">Patient</div>
+                <p class="role-desc">View your medical history, prescriptions, appointments, and billing records.</p>
+                <button class="role-btn" onclick="window.location.href='./patient-login.html'">Login as Patient</button>
+            </div>
+            <div class="role-card admin-card" id="adminCard">
+                <div class="role-icon-wrap">🛡️</div>
+                <div class="role-name">Admin</div>
+                <p class="role-desc">System administration, staff management, and database control center.</p>
+                <button class="role-btn" onclick="window.location.href='./admin-login.html'">Login as Admin</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── NAVBAR SCROLL EFFECT ──
+    const nav = document.getElementById('mainNav');
+    window.addEventListener('scroll', () => {
+        nav.classList.toggle('scrolled', window.scrollY > 40);
+    });
+
+    // ── LOGIN MODAL ──
+    const loginModal = document.getElementById('loginModal');
+    const openModalBtns = ['loginBtn', 'loginFromPanelBtn'];
+    openModalBtns.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.addEventListener('click', e => {
+            e.preventDefault();
+            loginModal.classList.add('show');
+        });
+    });
+    document.getElementById('closeModal').addEventListener('click', () => loginModal.classList.remove('show'));
+    loginModal.addEventListener('click', e => { if (e.target === loginModal) loginModal.classList.remove('show'); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') loginModal.classList.remove('show'); });
+
+    // ── COUNTER ANIMATION ──
+    function animateCounter(el, target, duration = 2000) {
+        const start = performance.now();
+        const step = timestamp => {
+            const progress = Math.min((timestamp - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 4);
+            el.textContent = Math.floor(eased * target).toLocaleString();
+            if (progress < 1) requestAnimationFrame(step);
+            else el.textContent = target.toLocaleString();
+        };
+        requestAnimationFrame(step);
+    }
+
+    const statsObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                document.querySelectorAll('[data-target]').forEach(el => {
+                    animateCounter(el, parseInt(el.dataset.target));
+                });
+                statsObserver.disconnect();
+            }
+        });
+    }, { threshold: 0.3 });
+    const statsSection = document.querySelector('.stats-section');
+    if (statsSection) statsObserver.observe(statsSection);
+
+    // ── SMOOTH GLOW PARALLAX ──
+    document.addEventListener('mousemove', e => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 30;
+        const y = (e.clientY / window.innerHeight - 0.5) * 30;
+        const g1 = document.querySelector('.hero-glow-1');
+        const g2 = document.querySelector('.hero-glow-2');
+        if (g1) g1.style.transform = `translate(${x}px, ${y}px)`;
+        if (g2) g2.style.transform = `translate(${-x}px, ${-y}px)`;
+    });
+</script><!-- ══════════════ NEW PATIENT INFO MODAL ══════════════ -->
+<div class="modal-overlay" id="newPatientModal">
+    <div class="modal-box" style="max-width:500px;">
+        <div class="modal-header">
+            <h2 class="modal-title">🆕 New Patient Registration</h2>
+            <button class="modal-close" onclick="document.getElementById('newPatientModal').classList.remove('show')">✕</button>
+        </div>
+        <div style="text-align:center;padding:10px 0 24px;">
+            <div style="width:72px;height:72px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;">🏥</div>
+            <p style="color:#94a3b8;font-size:14px;line-height:1.7;margin-bottom:20px;">
+                New patient registrations are handled by our reception team to ensure accurate and secure data entry. 
+                Please visit our reception desk or call us to get registered.
+            </p>
+            <div style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:20px;margin-bottom:24px;text-align:left;">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                    <span style="font-size:20px;">📞</span>
+                    <div>
+                        <div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Call Reception</div>
+                        <div style="font-size:15px;font-weight:700;color:#f1f5f9;">+91 98765 43210</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span style="font-size:20px;">🕐</span>
+                    <div>
+                        <div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Working Hours</div>
+                        <div style="font-size:14px;font-weight:600;color:#f1f5f9;">Mon–Sat: 8:00 AM – 8:00 PM</div>
+                    </div>
+                </div>
+            </div>
+            <p style="font-size:12px;color:#64748b;margin-bottom:16px;">Are you a receptionist? Register the patient directly:</p>
+            <a href="./receptionist-login.html" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:11px 24px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                <i class="bi bi-person-badge-fill"></i> Receptionist Portal →
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── NEW PATIENT INFO ──
+    function showNewPatientInfo() {
+        document.getElementById('newPatientModal').classList.add('show');
+    }
+    document.getElementById('newPatientModal').addEventListener('click', e => {
+        if (e.target === document.getElementById('newPatientModal')) {
+            document.getElementById('newPatientModal').classList.remove('show');
+        }
+    });
+</script>
+
 </body>
 </html>

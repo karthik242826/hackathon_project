@@ -485,6 +485,28 @@ window.printInvoiceAlternative = async function(billId) {
             minute: '2-digit'
         });
 
+        let medicinesListHTML = '';
+        try {
+            const parsedMeds = JSON.parse(data.MEDICINE_NAME);
+            if (Array.isArray(parsedMeds)) {
+                parsedMeds.forEach(m => {
+                    medicinesListHTML += `<tr>
+                        <td class="py-2"><strong>${m.name}</strong></td>
+                        <td class="py-2">${m.dosage}</td>
+                        <td class="py-2">${m.frequency}</td>
+                        <td class="py-2">${m.duration}</td>
+                    </tr>`;
+                });
+            } else throw new Error();
+        } catch(e) {
+            medicinesListHTML = `<tr>
+                <td class="py-2"><strong>${data.MEDICINE_NAME}</strong></td>
+                <td class="py-2">${data.MEDICINE_DOSAGE}</td>
+                <td class="py-2">${data.MEDICINE_FREQUENCY}</td>
+                <td class="py-2">${data.MEDICINE_DURATION}</td>
+            </tr>`;
+        }
+
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
@@ -558,12 +580,7 @@ window.printInvoiceAlternative = async function(billId) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td class="py-2"><strong>\${data.MEDICINE_NAME}</strong></td>
-                                    <td class="py-2">\${data.MEDICINE_DOSAGE}</td>
-                                    <td class="py-2">\${data.MEDICINE_FREQUENCY}</td>
-                                    <td class="py-2">\${data.MEDICINE_DURATION}</td>
-                                </tr>
+                                ${medicinesListHTML}
                             </tbody>
                         </table>
                         ` : '<div class="text-muted small">No medication prescribed.</div>'}
@@ -599,9 +616,9 @@ window.printInvoiceAlternative = async function(billId) {
 
                     <div class="d-flex justify-content-between align-items-end mt-5">
                         <div class="text-secondary small">
-                            <strong>Payment Method:</strong> \${data.PAYMENT_METHOD}<br>
-                            <strong>Payment Status:</strong> <span class="fw-bold text-success">\${data.PAYMENT_STATUS}</span><br>
-                            <strong>Date Issued:</strong> \${formattedBillDate}
+                            <strong>Payment Method:</strong> ${data.PAYMENT_METHOD}<br>
+                            <strong>Payment Status:</strong> <span class="fw-bold text-success">${data.PAYMENT_STATUS}</span><br>
+                            <strong>Date Issued:</strong> ${formattedBillDate}
                         </div>
                         <div class="text-center text-muted small">
                             <div style="border-bottom: 1px solid #cbd5e1; width: 180px; margin-bottom: 5px;"></div>
@@ -694,28 +711,28 @@ window.printPrescriptionAlternative = function(prescId) {
                         </div>
                         <div class="text-end">
                             <h1 class="rx-title m-0">PRESCRIPTION</h1>
-                            <p class="fw-bold text-secondary m-0">RX-\${presc.PRESCRIPTION_ID.toString().padStart(4, '0')}</p>
+                            <p class="fw-bold text-secondary m-0">RX-${presc.PRESCRIPTION_ID.toString().padStart(4, '0')}</p>
                         </div>
                     </div>
 
                     <div class="row mb-5">
                         <div class="col-6">
                             <h6 class="text-muted fw-bold mb-2 small text-uppercase">PATIENT INFO</h6>
-                            <strong class="fs-5">\${data.patient.PATIENT_FIRSTNAME} \${data.patient.PATIENT_LASTNAME}</strong>
+                            <strong class="fs-5">${data.patient.PATIENT_FIRSTNAME} ${data.patient.PATIENT_LASTNAME}</strong>
                             <div class="text-secondary small mt-1">
-                                Patient ID: PID-\${data.patient.PID} | Ph: \${data.patient.PATIENT_PHNO}<br>
-                                DOB: \${data.patient.PATIENT_DOB} | Blood Group: \${data.patient.PATIENT_BLOODGROUP}
+                                Patient ID: PID-${data.patient.PID} | Ph: ${data.patient.PATIENT_PHNO}<br>
+                                DOB: ${data.patient.PATIENT_DOB} | Blood Group: ${data.patient.PATIENT_BLOODGROUP}
                             </div>
                             <div class="text-secondary small mt-2">
-                                <strong>Address:</strong> \${data.patient.PATIENT_ADDRESS}
+                                <strong>Address:</strong> ${data.patient.PATIENT_ADDRESS}
                             </div>
                         </div>
                         <div class="col-6 text-end">
                             <h6 class="text-muted fw-bold mb-2 small text-uppercase">PRESCRIBING DOCTOR</h6>
-                            <strong class="fs-6">Dr. \${presc.DOCTOR_FIRSTNAME} \${presc.DOCTOR_LASTNAME}</strong>
+                            <strong class="fs-6">Dr. ${presc.DOCTOR_FIRSTNAME} ${presc.DOCTOR_LASTNAME}</strong>
                             <div class="text-secondary small mt-1">
-                                <strong>Specialization:</strong> \${presc.DOCTOR_SPECIALIZATION}<br>
-                                <strong>Date:</strong> \${presc.APPOINTMENT_DATE}
+                                <strong>Specialization:</strong> ${presc.DOCTOR_SPECIALIZATION}<br>
+                                <strong>Date:</strong> ${presc.APPOINTMENT_DATE}
                             </div>
                         </div>
                     </div>
@@ -723,7 +740,7 @@ window.printPrescriptionAlternative = function(prescId) {
                     <div class="mb-4">
                         <h6 class="text-muted fw-bold mb-2 small text-uppercase">Clinical Summary & Symptoms</h6>
                         <div class="p-3 bg-light border rounded small text-dark">
-                            \${presc.SYMPTOMS || 'No symptoms/diagnosis logs saved.'}
+                            ${presc.SYMPTOMS || 'No symptoms/diagnosis logs saved.'}
                         </div>
                     </div>
 
@@ -739,7 +756,7 @@ window.printPrescriptionAlternative = function(prescId) {
                                 </tr>
                             </thead>
                             <tbody>
-                                \${medicinesListHTML}
+                                ${medicinesListHTML}
                             </tbody>
                         </table>
                     </div>

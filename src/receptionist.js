@@ -3,6 +3,8 @@ if (sessionStorage.getItem('hms_receptionist_auth') !== 'true') {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    let allAppointments = [];
+
     // Render current date cleanly in header
     const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', dateOptions);
@@ -18,11 +20,35 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('total-patients').innerText = patients.length;
             renderPatientsDirectory(patients);
 
+            // Load doctors for filter
+            const doctorsResponse = await fetch('/api/doctors');
+            const doctors = doctorsResponse.ok ? await doctorsResponse.json() : [];
+            const doctorSelect = document.getElementById('filter-doctor');
+            if (doctorSelect) {
+                doctorSelect.innerHTML = '<option value="">All Doctors</option>';
+                doctors.forEach(d => {
+                    doctorSelect.innerHTML += `<option value="${d.D_ID}">Dr. ${d.DOCTOR_FIRSTNAME} ${d.DOCTOR_LASTNAME}</option>`;
+                });
+            }
+
             // Load appointments list
             const apptsResponse = await fetch('/api/appointments');
-            const appointments = apptsResponse.ok ? await apptsResponse.json() : [];
-            document.getElementById('total-appointments').innerText = appointments.length;
-            renderAppointmentsSchedule(appointments);
+            allAppointments = apptsResponse.ok ? await apptsResponse.json() : [];
+            
+            // Set default date filter to today's local date
+            const filterDateInput = document.getElementById('filter-date');
+            if (filterDateInput) {
+                const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+                const localISODate = (new Date(Date.now() - tzOffset)).toISOString().split('T')[0];
+                filterDateInput.value = localISODate;
+            }
+
+            // Bind filters change events
+            if (filterDateInput) filterDateInput.addEventListener('change', applyFilters);
+            if (doctorSelect) doctorSelect.addEventListener('change', applyFilters);
+
+            // Apply initial filtering
+            applyFilters();
 
             // Load invoices list (to compute metrics and revenue sum)
             const billsResponse = await fetch('/api/bills');
@@ -34,6 +60,26 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error fetching receptionist metrics:', error);
         }
+    }
+
+    function applyFilters() {
+        const filterDateInput = document.getElementById('filter-date');
+        const doctorSelect = document.getElementById('filter-doctor');
+        
+        const selectedDate = filterDateInput ? filterDateInput.value : '';
+        const selectedDoctorId = doctorSelect ? doctorSelect.value : '';
+
+        const filtered = allAppointments.filter(a => {
+            const matchesDate = !selectedDate || a.APPOINTMENT_DATE === selectedDate;
+            const matchesDoctor = !selectedDoctorId || a.DOCTOR_ID.toString() === selectedDoctorId.toString();
+            return matchesDate && matchesDoctor;
+        });
+
+        // Update Active Bookings metric count with filtered SCHEDULED appointments
+        const activeCount = filtered.filter(a => a.APPOINTMENT_STATUS === 'SCHEDULED').length;
+        document.getElementById('total-appointments').innerText = activeCount;
+
+        renderAppointmentsSchedule(filtered);
     }
 
     function renderPatientsDirectory(patients) {
@@ -112,6 +158,37 @@ window.viewPrescription = async function(apptId) {
         const p = await response.json();
 
         if (p) {
+            let medicinesListHTML = '';
+            try {
+                const parsedMeds = JSON.parse(p.MEDICINE_NAME);
+                if (Array.isArray(parsedMeds)) {
+                    parsedMeds.forEach(m => {
+                        medicinesListHTML += `
+                            <div class="mb-2 pb-2 border-bottom">
+                                <strong class="text-primary" style="color: #4f46e5 !important;">${m.name}</strong>
+                                <div class="row text-center small mt-1 text-dark">
+                                    <div class="col-4 border-end">Dosage: <b>${m.dosage}</b></div>
+                                    <div class="col-4 border-end">Frequency: <b>${m.frequency}</b></div>
+                                    <div class="col-4">Duration: <b>${m.duration}</b></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else throw new Error();
+            } catch(e) {
+                // Fallback for legacy
+                medicinesListHTML = `
+                    <div class="mb-2 pb-2 border-bottom">
+                        <strong class="text-primary" style="color: #4f46e5 !important;">${p.MEDICINE_NAME}</strong>
+                        <div class="row text-center small mt-1 text-dark">
+                            <div class="col-4 border-end">Dosage: <b>${p.MEDICINE_DOSAGE}</b></div>
+                            <div class="col-4 border-end">Frequency: <b>${p.MEDICINE_FREQUENCY}</b></div>
+                            <div class="col-4">Duration: <b>${p.MEDICINE_DURATION}</b></div>
+                        </div>
+                    </div>
+                `;
+            }
+
             bodyElement.innerHTML = `
                 <div class="mb-3 border-bottom pb-2">
                     <span class="text-muted small d-block">Treating Physician</span>
@@ -121,23 +198,9 @@ window.viewPrescription = async function(apptId) {
                     <span class="text-muted small d-block">Observed Symptoms / Diagnosis</span>
                     <p class="m-0 fw-bold" style="color: #4f46e5;">${p.SYMPTOMS}</p>
                 </div>
-                <div class="mb-3 border-bottom pb-2">
-                    <span class="text-muted small d-block">Prescribed Medication</span>
-                    <strong class="text-dark fs-5">${p.MEDICINE_NAME}</strong>
-                </div>
-                <div class="row g-2 text-center bg-light p-3 rounded-3 mt-3">
-                    <div class="col-4 border-end">
-                        <span class="text-muted small d-block">Dosage</span>
-                        <strong class="text-dark">${p.MEDICINE_DOSAGE}</strong>
-                    </div>
-                    <div class="col-4 border-end">
-                        <span class="text-muted small d-block">Frequency</span>
-                        <strong class="text-dark">${p.MEDICINE_FREQUENCY}</strong>
-                    </div>
-                    <div class="col-4">
-                        <span class="text-muted small d-block">Duration</span>
-                        <strong class="text-dark">${p.MEDICINE_DURATION}</strong>
-                    </div>
+                <div class="mb-3">
+                    <span class="text-muted small d-block mb-2">Prescribed Medication</span>
+                    <div class="bg-light p-3 rounded-3">${medicinesListHTML}</div>
                 </div>
             `;
         } else {
@@ -147,6 +210,17 @@ window.viewPrescription = async function(apptId) {
         console.error('Error fetching prescription details:', error);
         bodyElement.innerHTML = `<p class="text-danger text-center m-0">Error retrieving prescription record from database.</p>`;
     }
+};
+
+// Secure Sign Out with session cookie clearance
+window.signOut = async function() {
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {}
+    sessionStorage.removeItem('hms_receptionist_auth');
+    sessionStorage.removeItem('hms_receptionist_name');
+    sessionStorage.removeItem('hms_receptionist_username');
+    window.location.href = './index.html';
 };
 
 // Change Password Modal Controls

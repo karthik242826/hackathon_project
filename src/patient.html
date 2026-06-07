@@ -118,7 +118,7 @@
                 <button type="button" class="btn btn-outline-light btn-sm" onclick="openChangePasswordModal()">
                     <i class="bi bi-key-fill me-1"></i> Change Password
                 </button>
-                <a href="./index.html" class="btn btn-outline-danger btn-sm">Sign Out</a>
+                <a href="#" class="btn btn-outline-danger btn-sm" onclick="(async()=>{try{await fetch('/api/auth/logout',{method:'POST'})}catch(e){}window.location.href='./index.html'})()">Sign Out</a>
             </div>
         </div>
     </nav>
